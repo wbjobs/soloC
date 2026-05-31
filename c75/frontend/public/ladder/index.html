@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>梯形图编辑器 - PLC网关</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .component-group {
+            margin-bottom: 25px;
+        }
+
+        .component-group h4 {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .component-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: grab;
+            transition: all 0.3s;
+        }
+
+        .component-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #00d4ff;
+            transform: translateX(5px);
+        }
+
+        .component-item:active {
+            cursor: grabbing;
+        }
+
+        .component-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .component-info {
+            flex: 1;
+        }
+
+        .component-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .component-desc {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .templates {
+            margin-top: 20px;
+        }
+
+        .template-item {
+            padding: 12px;
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .template-item:hover {
+            background: rgba(124, 58, 237, 0.2);
+        }
+
+        .template-item h5 {
+            color: #7c3aed;
+            margin-bottom: 5px;
+        }
+
+        .template-item p {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-toolbar {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 5px;
+            padding-right: 15px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toolbar-btn {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .toolbar-btn.active {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .rung-info {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .canvas-container {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        .ladder-canvas {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            min-height: 100%;
+            position: relative;
+            padding: 20px;
+        }
+
+        .left-bus, .right-bus {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #00d4ff, #7c3aed);
+        }
+
+        .left-bus {
+            left: 30px;
+        }
+
+        .right-bus {
+            right: 30px;
+        }
+
+        .rung {
+            position: relative;
+            min-height: 80px;
+            margin-left: 34px;
+            margin-right: 34px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .rung:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .rung-number {
+            position: absolute;
+            left: -25px;
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .rung-connector {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .rung-connector.active {
+            background: #00d4ff;
+            box-shadow: 0 0 10px #00d4ff;
+        }
+
+        .element {
+            position: relative;
+            z-index: 10;
+            margin: 0 15px;
+            cursor: move;
+            user-select: none;
+        }
+
+        .element.selected {
+            outline: 2px solid #00d4ff;
+            outline-offset: 4px;
+        }
+
+        .element-delete {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: none;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .element:hover .element-delete {
+            display: flex;
+        }
+
+        .contact-element {
+            width: 60px;
+            height: 40px;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .contact-element.nc {
+            background: linear-gradient(45deg, transparent 45%, #fff 45%, #fff 55%, transparent 55%);
+        }
+
+        .contact-label {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #00d4ff;
+            position: absolute;
+            bottom: -18px;
+        }
+
+        .coil-element {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .coil-element.negated::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 2px;
+            background: #fff;
+            right: -15px;
+            transform: rotate(-45deg);
+        }
+
+        .coil-label {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #7c3aed;
+            position: absolute;
+            bottom: -22px;
+        }
+
+        .timer-element {
+            width: 80px;
+            height: 50px;
+            border: 2px solid #f59e0b;
+            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .timer-label {
+            font-size: 0.65rem;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .timer-value {
+            font-size: 0.75rem;
+            color: #fff;
+        }
+
+        .counter-element {
+            width: 80px;
+            height: 50px;
+            border: 2px solid #22c55e;
+            border-radius: 4px;
+            background: rgba(34, 197, 94, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .counter-label {
+            font-size: 0.65rem;
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .counter-value {
+            font-size: 0.75rem;
+            color: #fff;
+        }
+
+        .parallel-branch {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .parallel-line {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .parallel-line::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .parallel-line::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .drop-zone {
+            min-width: 80px;
+            min-height: 60px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .add-rung-btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .add-rung-btn:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .element-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .element-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            min-width: 300px;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .status-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 500;
+        }
+
+        .status-panel h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .status-item {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+            font-family: 'Consolas', monospace;
+        }
+
+        .status-item.success {
+            border-left: 3px solid #22c55e;
+        }
+
+        .status-item.error {
+            border-left: 3px solid #ef4444;
+        }
+
+        .status-item.info {
+            border-left: 3px solid #00d4ff;
+        }
+
+        .back-link {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <a href="/" class="back-link">← 返回监控面板</a>
+            <h1>🔧 梯形图编辑器</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="clearLadder()">
+                🗑️ 清空
+            </button>
+            <button class="btn btn-secondary" onclick="compileLadder()">
+                🔨 编译
+            </button>
+            <button class="btn btn-primary" onclick="downloadBinary()">
+                ⬇️ 下载二进制文件
+            </button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <h3>📦 元件库</h3>
+            
+            <div class="component-group">
+                <h4>触点</h4>
+                <div class="component-item" draggable="true" data-type="contact-no">
+                    <div class="component-icon">| |</div>
+                    <div class="component-info">
+                        <div class="component-name">常开触点</div>
+                        <div class="component-desc">NO - Normally Open</div>
+                    </div>
+                </div>
+                <div class="component-item" draggable="true" data-type="contact-nc">
+                    <div class="component-icon">|/|</div>
+                    <div class="component-info">
+                        <div class="component-name">常闭触点</div>
+                        <div class="component-desc">NC - Normally Closed</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h4>线圈</h4>
+                <div class="component-item" draggable="true" data-type="coil">
+                    <div class="component-icon">()</div>
+                    <div class="component-info">
+                        <div class="component-name">输出线圈</div>
+                        <div class="component-desc">Standard Output Coil</div>
+                    </div>
+                </div>
+                <div class="component-item" draggable="true" data-type="coil-not">
+                    <div class="component-icon">(/)</div>
+                    <div class="component-info">
+                        <div class="component-name">取反线圈</div>
+                        <div class="component-desc">Negated Output Coil</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h4>定时器/计数器</h4>
+                <div class="component-item" draggable="true" data-type="timer-on">
+                    <div class="component-icon">TON</div>
+                    <div class="component-info">
+                        <div class="component-name">接通定时器</div>
+                        <div class="component-desc">Timer On Delay</div>
+                    </div>
+                </div>
+                <div class="component-item" draggable="true" data-type="counter">
+                    <div class="component-icon">CTU</div>
+                    <div class="component-info">
+                        <div class="component-name">加计数器</div>
+                        <div class="component-desc">Count Up</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h4>逻辑</h4>
+                <div class="component-item" draggable="true" data-type="parallel">
+                    <div class="component-icon">║</div>
+                    <div class="component-info">
+                        <div class="component-name">并联分支</div>
+                        <div class="component-desc">Parallel Branch (OR)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="templates">
+                <h3>📋 示例模板</h3>
+                <div class="template-item" onclick="loadTemplate('self-latch')">
+                    <h5>自锁电路</h5>
+                    <p>经典的启动-停止-保持电路，使用输出触点自锁</p>
+                </div>
+                <div class="template-item" onclick="loadTemplate('interlock')">
+                    <h5>互锁电路</h5>
+                    <p>两个输出互锁，防止同时动作</p>
+                </div>
+                <div class="template-item" onclick="loadTemplate('star-delta')">
+                    <h5>星三角启动</h5>
+                    <p>电机星三角降压启动控制电路</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <div class="editor-toolbar">
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="addRung()">+ 添加梯级</button>
+                    <button class="toolbar-btn" onclick="removeSelectedRung()">- 删除梯级</button>
+                </div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="zoomIn()">🔍+ 放大</button>
+                    <button class="toolbar-btn" onclick="zoomOut()">🔍- 缩小</button>
+                </div>
+                <div class="rung-info">
+                    梯级数: <span id="rungCount">1</span> | 元件数: <span id="elementCount">0</span>
+                </div>
+            </div>
+
+            <div class="canvas-container" id="canvasContainer">
+                <div class="ladder-canvas" id="ladderCanvas">
+                    <div class="left-bus"></div>
+                    <div class="right-bus"></div>
+                    
+                    <div class="rung" data-rung="0">
+                        <span class="rung-number">0</span>
+                        <div class="rung-connector"></div>
+                        <div class="drop-zone" data-position="0" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 0, 0)">
+                            拖放元件到此处
+                        </div>
+                    </div>
+
+                    <button class="add-rung-btn" onclick="addRung()">+ 添加新梯级</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="element-modal" id="elementModal">
+        <div class="modal-content">
+            <h3>编辑元件属性</h3>
+            <div class="form-group">
+                <label>元件类型</label>
+                <input type="text" id="modalType" readonly>
+            </div>
+            <div class="form-group">
+                <label>地址/标签</label>
+                <input type="text" id="modalAddress" placeholder="例如: I0.0, Q0.0, M0.0">
+            </div>
+            <div class="form-group" id="timerSettings" style="display: none;">
+                <label>预设值 (PT)</label>
+                <input type="number" id="modalPreset" value="1000">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveElement()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-panel" id="statusPanel">
+        <h4>📝 编译状态</h4>
+        <div id="statusContent">
+            <div class="status-item info">编辑器就绪，等待操作...</div>
+        </div>
+    </div>
+
+    <script src="ladder-editor.js"></script>
+</body>
+</html>

@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC 网关监控面板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .ladder-link {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #7c3aed, #00d4ff);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .ladder-link:hover {
+            box-shadow: 0 5px 20px rgba(124, 58, 237, 0.4);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab.active {
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .register-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .register-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .register-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .register-btn.selected {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .register-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .register-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .register-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .register-card.selected {
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .register-index {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .register-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .write-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .write-panel h3 {
+            margin-bottom: 15px;
+        }
+
+        .write-form {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .btn-write {
+            padding: 12px 30px;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-write:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .logs-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .log-filters input,
+        .log-filters select {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .log-filters input:focus,
+        .log-filters select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logs-table th,
+        .logs-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logs-table th {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+            color: #00d4ff;
+        }
+
+        .logs-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .direction-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .direction-tag.Modbus {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .direction-tag.OPCUA {
+            background: rgba(124, 58, 237, 0.2);
+            color: #7c3aed;
+        }
+
+        .direction-tag.Manual {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination button.active {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .connection-status.connected {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .connected .status-dot {
+            background: #22c55e;
+        }
+
+        .disconnected .status-dot {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PLC 网关监控面板</h1>
+            <a href="/ladder/" class="ladder-link">⚡ 梯形图编辑器</a>
+            <div style="margin-top: 15px;">
+                <span id="connectionStatus" class="connection-status disconnected">
+                    <span class="status-dot"></span>
+                    <span>未连接</span>
+                </span>
+            </div>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">Modbus TCP</div>
+                <div class="status-value">端口 502</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">OPC UA</div>
+                <div class="status-value">opc.tcp://localhost:4840</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">寄存器总数</div>
+                <div class="status-value">100</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="chart">数据曲线</button>
+            <button class="tab" data-tab="registers">寄存器列表</button>
+            <button class="tab" data-tab="write">手动写入</button>
+            <button class="tab" data-tab="logs">转换日志</button>
+        </div>
+
+        <div id="chart" class="tab-content active">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">寄存器实时数据曲线</h3>
+                </div>
+                <div class="register-selector">
+                    <button class="register-btn selected" data-register="0">寄存器 0</button>
+                    <button class="register-btn" data-register="1">寄存器 1</button>
+                    <button class="register-btn" data-register="2">寄存器 2</button>
+                    <button class="register-btn" data-register="3">寄存器 3</button>
+                    <button class="register-btn" data-register="4">寄存器 4</button>
+                    <button class="register-btn" data-register="5">寄存器 5</button>
+                </div>
+                <canvas id="dataChart" height="400"></canvas>
+            </div>
+        </div>
+
+        <div id="registers" class="tab-content">
+            <div class="chart-container">
+                <h3 class="chart-title" style="margin-bottom: 20px;">所有寄存器实时值</h3>
+                <div class="register-grid" id="registerGrid">
+                </div>
+            </div>
+        </div>
+
+        <div id="write" class="tab-content">
+            <div class="write-panel">
+                <h3>手动写入寄存器</h3>
+                <div class="write-form">
+                    <div class="form-group">
+                        <label>寄存器索引 (0-99)</label>
+                        <input type="number" id="writeIndex" min="0" max="99" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>写入值 (0-65535)</label>
+                        <input type="number" id="writeValue" min="0" max="65535" value="0">
+                    </div>
+                    <button class="btn-write" onclick="writeRegister()">写入</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title" style="margin-bottom: 20px;">快速选择寄存器</h3>
+                <div class="register-grid" id="writeRegisterGrid">
+                </div>
+            </div>
+        </div>
+
+        <div id="logs" class="tab-content">
+            <div class="logs-container">
+                <h3 style="margin-bottom: 20px;">协议转换日志</h3>
+                <div class="log-filters">
+                    <select id="filterDirection">
+                        <option value="">所有方向</option>
+                        <option value="Modbus->OPCUA">Modbus -> OPCUA</option>
+                        <option value="OPCUA->Modbus">OPCUA -> Modbus</option>
+                        <option value="Manual">手动写入</option>
+                    </select>
+                    <input type="number" id="filterRegister" placeholder="寄存器索引" min="0" max="99">
+                    <input type="datetime-local" id="filterStartTime">
+                    <input type="datetime-local" id="filterEndTime">
+                    <button class="btn-write" style="padding: 10px 20px;" onclick="loadLogs()">查询</button>
+                </div>
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>方向</th>
+                            <th>寄存器</th>
+                            <th>原值</th>
+                            <th>新值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                    </tbody>
+                </table>
+                <div class="pagination" id="pagination">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let chart = null;
+        let registerData = {};
+        let selectedRegisters = [0];
+        let currentPage = 1;
+        let totalLogs = 0;
+        const logsPerPage = 20;
+
+        function init() {
+            setupTabs();
+            setupRegisterSelector();
+            initChart();
+            connectWebSocket();
+            renderRegisterGrid();
+            renderWriteRegisterGrid();
+            loadLogs();
+            setupDateFilters();
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+        }
+
+        function setupRegisterSelector() {
+            document.querySelectorAll('.register-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const register = parseInt(btn.dataset.register);
+                    if (btn.classList.contains('selected')) {
+                        if (selectedRegisters.length > 1) {
+                            btn.classList.remove('selected');
+                            selectedRegisters = selectedRegisters.filter(r => r !== register);
+                        }
+                    } else {
+                        btn.classList.add('selected');
+                        selectedRegisters.push(register);
+                    }
+                    updateChart();
+                });
+            });
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('dataChart').getContext('2d');
+            
+            for (let i = 0; i < 100; i++) {
+                registerData[i] = [];
+            }
+
+            const colors = [
+                '#00d4ff', '#7c3aed', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'
+            ];
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: selectedRegisters.map((r, i) => ({
+                        label: `寄存器 ${r}`,
+                        data: [],
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: colors[i % colors.length] + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#00d4ff',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#aaa',
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#aaa'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            const colors = [
+                '#00d4ff', '#7c3aed', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'
+            ];
+
+            chart.data.datasets = selectedRegisters.map((r, i) => ({
+                label: `寄存器 ${r}`,
+                data: registerData[r].slice(-60),
+                borderColor: colors[i % colors.length],
+                backgroundColor: colors[i % colors.length] + '20',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 5
+            }));
+
+            chart.data.labels = Array.from({ length: Math.min(60, registerData[0].length) }, (_, i) => '');
+            chart.update('none');
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+            
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+                document.querySelector('#connectionStatus span:last-child').textContent = '已连接';
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'registers') {
+                    updateRegisterData(data.data);
+                }
+            };
+
+            ws.onclose = () => {
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                document.querySelector('#connectionStatus span:last-child').textContent = '未连接';
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = () => {
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                document.querySelector('#connectionStatus span:last-child').textContent = '未连接';
+            };
+        }
+
+        function updateRegisterData(values) {
+            const time = new Date().toLocaleTimeString();
+
+            for (let i = 0; i < values.length; i++) {
+                registerData[i].push(values[i]);
+                if (registerData[i].length > 60) {
+                    registerData[i].shift();
+                }
+            }
+
+            updateChart();
+            updateRegisterGrid(values);
+            updateWriteRegisterGrid(values);
+        }
+
+        function renderRegisterGrid() {
+            const grid = document.getElementById('registerGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const card = document.createElement('div');
+                card.className = 'register-card';
+                card.dataset.register = i;
+                card.innerHTML = `
+                    <div class="register-index">寄存器 ${i}</div>
+                    <div class="register-value" id="reg-value-${i}">--</div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function updateRegisterGrid(values) {
+            for (let i = 0; i < values.length; i++) {
+                const el = document.getElementById(`reg-value-${i}`);
+                if (el) {
+                    el.textContent = values[i];
+                }
+            }
+        }
+
+        function renderWriteRegisterGrid() {
+            const grid = document.getElementById('writeRegisterGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const card = document.createElement('div');
+                card.className = 'register-card';
+                card.dataset.register = i;
+                card.innerHTML = `
+                    <div class="register-index">寄存器 ${i}</div>
+                    <div class="register-value" id="write-reg-value-${i}">--</div>
+                `;
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('#writeRegisterGrid .register-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    document.getElementById('writeIndex').value = i;
+                    document.getElementById('writeValue').value = document.getElementById(`write-reg-value-${i}`).textContent;
+                });
+                grid.appendChild(card);
+            }
+        }
+
+        function updateWriteRegisterGrid(values) {
+            for (let i = 0; i < values.length; i++) {
+                const el = document.getElementById(`write-reg-value-${i}`);
+                if (el) {
+                    el.textContent = values[i];
+                }
+            }
+        }
+
+        async function writeRegister() {
+            const index = parseInt(document.getElementById('writeIndex').value);
+            const value = parseInt(document.getElementById('writeValue').value);
+
+            if (isNaN(index) || index < 0 || index >= 100) {
+                alert('请输入有效的寄存器索引 (0-99)');
+                return;
+            }
+
+            if (isNaN(value) || value < 0 || value > 65535) {
+                alert('请输入有效的值 (0-65535)');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/registers/${index}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ value })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('写入成功！');
+                } else {
+                    alert('写入失败: ' + result.error);
+                }
+            } catch (error) {
+                alert('写入失败: ' + error.message);
+            }
+        }
+
+        function setupDateFilters() {
+            const now = new Date();
+            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            
+            document.getElementById('filterStartTime').value = yesterday.toISOString().slice(0, 16);
+            document.getElementById('filterEndTime').value = now.toISOString().slice(0, 16);
+        }
+
+        async function loadLogs() {
+            const direction = document.getElementById('filterDirection').value;
+            const register = document.getElementById('filterRegister').value;
+            const startTime = document.getElementById('filterStartTime').value;
+            const endTime = document.getElementById('filterEndTime').value;
+
+            let url = `/api/logs?limit=${logsPerPage}&offset=${(currentPage - 1) * logsPerPage}`;
+            if (direction) url += `&direction=${encodeURIComponent(direction)}`;
+            if (register) url += `&register=${register}`;
+            if (startTime) url += `&start_time=${encodeURIComponent(startTime)}`;
+            if (endTime) url += `&end_time=${encodeURIComponent(endTime)}`;
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    totalLogs = result.total;
+                    renderLogs(result.data);
+                    renderPagination();
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '';
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                const directionClass = log.Direction.split('->')[0];
+                row.innerHTML = `
+                    <td>${new Date(log.Timestamp).toLocaleString()}</td>
+                    <td><span class="direction-tag ${directionClass}">${log.Direction}</span></td>
+                    <td>${log.Register}</td>
+                    <td>${log.OldValue}</td>
+                    <td>${log.NewValue}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #aaa;">暂无数据</td></tr>';
+            }
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(totalLogs / logsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '上一页';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadLogs();
+                }
+            };
+            pagination.appendChild(prevBtn);
+
+            for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.className = i === currentPage ? 'active' : '';
+                btn.onclick = () => {
+                    currentPage = i;
+                    loadLogs();
+                };
+                pagination.appendChild(btn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '下一页';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadLogs();
+                }
+            };
+            pagination.appendChild(nextBtn);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
