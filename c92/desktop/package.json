@@ -1,0 +1,41 @@
+{
+  "name": "clipboard-sync-desktop",
+  "version": "1.0.0",
+  "description": "Cross-platform clipboard sync desktop client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": ["clipboard", "sync", "electron"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "crypto-js": "^4.2.0",
+    "uuid": "^9.0.1"
+  },
+  "build": {
+    "appId": "com.clipboard.sync",
+    "productName": "Clipboard Sync",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "deb"
+    }
+  }
+}
