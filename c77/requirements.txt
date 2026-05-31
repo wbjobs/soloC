@@ -1,0 +1,6 @@
+flask==3.0.0
+flask-cors==4.0.0
+openmm==8.1.1
+pdbfixer==1.9
+numpy==1.26.0
+mdtraj==1.9.9

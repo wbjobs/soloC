@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein MD Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background: #16213e;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #0f3460;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .viewer-container {
+            flex: 1;
+            position: relative;
+            background: #0a0a1a;
+        }
+
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+        }
+
+        .charts-container {
+            height: 250px;
+            background: #16213e;
+            border-top: 1px solid #0f3460;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .chart-wrapper {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .chart-wrapper h4 {
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #e94560;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #e94560;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #0f3460;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: #1a4a8a;
+        }
+
+        .file-upload {
+            border: 2px dashed #0f3460;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .file-upload p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .status-box {
+            background: #1a1a2e;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .status-label {
+            color: #888;
+        }
+
+        .status-value {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #0f3460;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #4ade80);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .download-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h1>🧬 Protein MD Simulator</h1>
+            
+            <div class="section">
+                <h3>Input Structure</h3>
+                <div class="input-group">
+                    <label>PDB ID (e.g., 1AKI)</label>
+                    <input type="text" id="pdbId" placeholder="Enter PDB ID...">
+                </div>
+                <div style="text-align: center; margin: 10px 0; color: #888;">OR</div>
+                <div class="file-upload" id="fileUpload">
+                    <p>📁 Click to upload PDB file</p>
+                    <input type="file" id="pdbFile" accept=".pdb" style="display: none;">
+                </div>
+                <p id="fileName" style="margin-top: 10px; font-size: 12px; color: #4ade80;"></p>
+            </div>
+
+            <div class="section">
+                <h3>🧪 Ligand Docking (MM/GBSA)</h3>
+                <div class="file-upload" id="sdfUpload">
+                    <p>💊 Click to upload ligand SDF file</p>
+                    <input type="file" id="sdfFile" accept=".sdf,.mol" style="display: none;">
+                </div>
+                <p id="sdfFileName" style="margin-top: 10px; font-size: 12px; color: #4ade80;"></p>
+                <button class="btn btn-primary" id="startDockingBtn" style="margin-top: 15px;">Calculate Binding Energy</button>
+                <button class="btn btn-secondary" id="showHeatmapBtn" disabled style="margin-top: 10px;">Show Binding Pocket Heatmap</button>
+            </div>
+
+            <div class="section hidden" id="dockingSection">
+                <h3>Docking Results</h3>
+                <div class="status-box">
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" id="dockingStatus">Ready</span>
+                    </div>
+                    <div class="status-item" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 8px;">
+                        <span class="status-label">Binding Energy:</span>
+                        <span class="status-value" id="bindingEnergy" style="color: #f472b6; font-size: 18px; font-weight: bold;">-- kcal/mol</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Complex Energy:</span>
+                        <span class="status-value" id="complexEnergy">-- kcal/mol</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Protein Energy:</span>
+                        <span class="status-value" id="proteinEnergy">-- kcal/mol</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Ligand Energy:</span>
+                        <span class="status-value" id="ligandEnergy">-- kcal/mol</span>
+                    </div>
+                </div>
+                <div id="pocketResidues" style="margin-top: 15px;">
+                    <h4 style="color: #e94560; margin-bottom: 10px;">Binding Pocket Residues:</h4>
+                    <div id="residueList" style="max-height: 200px; overflow-y: auto; font-size: 12px;"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Simulation Settings</h3>
+                <div class="input-group">
+                    <label>Simulation Time (ns)</label>
+                    <input type="text" id="simTime" value="100" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Solvent Model</label>
+                    <input type="text" id="solvent" value="Implicit (OBC2)" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Temperature (K)</label>
+                    <input type="text" id="temperature" value="300" readonly>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="startBtn">Start Simulation</button>
+            <button class="btn btn-secondary" id="stopBtn" disabled>Stop Simulation</button>
+
+            <div class="section hidden" id="statusSection">
+                <h3>Simulation Status</h3>
+                <div class="status-box">
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" id="statusText">Ready</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Time Progress:</span>
+                        <span class="status-value" id="timeProgress">0 ns / 100 ns</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Performance:</span>
+                        <span class="status-value" id="nsPerDay">0 ns/day</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Current Energy:</span>
+                        <span class="status-value" id="currentEnergy">0 kJ/mol</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">RMSD:</span>
+                        <span class="status-value" id="currentRmsd">0 Å</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Radius of Gyration:</span>
+                        <span class="status-value" id="currentRg">0 Å</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="download-buttons hidden" id="downloadButtons">
+                    <button class="btn btn-secondary" id="downloadDcd">Download DCD</button>
+                    <button class="btn btn-secondary" id="downloadPng">Snapshot PNG</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="viewer-container">
+                <canvas id="canvas3d"></canvas>
+            </div>
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <h4>Potential Energy (kJ/mol)</h4>
+                    <canvas id="energyChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>RMSD (Å)</h4>
+                    <canvas id="rmsdChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Radius of Gyration (Å)</h4>
+                    <canvas id="rgChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Residue Energy Contribution (kcal/mol)</h4>
+                    <canvas id="residueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="hiddenFileInput" style="display: none;">
+
+    <script src="app.js"></script>
+</body>
+</html>
