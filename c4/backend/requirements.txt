@@ -1,0 +1,12 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+pydantic==2.9.2
+numpy==2.1.1
+openmm==8.1.1
+openmmtools==0.23.0
+pdbfixer==1.11.0
+parmed==4.2.2
+cors-python==0.0.1
+matplotlib==3.9.2
+pillow==10.4.0

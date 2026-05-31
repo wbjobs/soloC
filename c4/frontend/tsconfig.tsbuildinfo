@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/colorbar.tsx","./src/components/mutationpanel.tsx","./src/components/resultspanel.tsx","./src/components/visualizer.tsx","./src/types/index.ts","./src/utils/colormapping.ts","./src/utils/modelinference.ts","./src/utils/mutationtools.ts","./src/utils/pdbparser.ts","./src/utils/proteinrenderer.ts"],"version":"5.9.3"}
