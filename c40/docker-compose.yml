@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  emqx:
+    image: emqx/emqx:latest
+    container_name: emqx
+    ports:
+      - "1883:1883"
+      - "8081:8081"
+      - "8083:8083"
+      - "8883:8883"
+    environment:
+      - EMQX_NAME=emqx
+      - EMQX_HOST=localhost
+    networks:
+      - monitor-network
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - monitor-network
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password123
+      - DOCKER_INFLUXDB_INIT_ORG=my-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=device-data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - monitor-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - monitor-network
+    restart: unless-stopped
+
+volumes:
+  influxdb-data:
+  mongodb-data:
+
+networks:
+  monitor-network:
+    driver: bridge
