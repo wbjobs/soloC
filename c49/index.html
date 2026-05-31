@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市交通流实时模拟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #0a0a1a;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #ui-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            min-width: 250px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #ui-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #4fc3f7;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .stat-label {
+            color: #aaa;
+        }
+        .stat-value {
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+        .control-group {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #ccc;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .control-group button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        #btn-pause {
+            background: #ff9800;
+            color: white;
+        }
+        #btn-pause:hover {
+            background: #f57c00;
+        }
+        #btn-reset {
+            background: #f44336;
+            color: white;
+        }
+        #btn-reset:hover {
+            background: #d32f2f;
+        }
+        #btn-place-light {
+            background: #4caf50;
+            color: white;
+        }
+        #btn-place-light:hover {
+            background: #388e3c;
+        }
+        #light-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            min-width: 220px;
+            max-height: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #light-panel h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #81c784;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        #traffic-lights-list {
+            max-height: 280px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .light-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .btn-remove {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-remove:hover {
+            background: #d32f2f;
+        }
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(20, 20, 40, 0.8);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: #aaa;
+            font-size: 12px;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">加载中...</div>
+    <div id="canvas-container"></div>
+    
+    <div id="ui-panel">
+        <h2>🚗 交通流模拟</h2>
+        <div class="stat-item">
+            <span class="stat-label">车辆总数:</span>
+            <span class="stat-value" id="vehicle-count">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">平均速度:</span>
+            <span class="stat-value" id="avg-speed">0 km/h</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">FPS:</span>
+            <span class="stat-value" id="fps">0</span>
+        </div>
+        
+        <div class="control-group">
+            <label>车辆数量: <span id="vehicle-slider-value">50</span></label>
+            <input type="range" id="vehicle-count-slider" min="10" max="500" value="50">
+        </div>
+        
+        <div class="control-group">
+            <label>模拟速度: <span id="speed-slider-value">1.0</span>x</label>
+            <input type="range" id="sim-speed-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+        </div>
+        
+        <div class="control-group">
+            <button id="btn-pause">暂停</button>
+            <button id="btn-reset">重置</button>
+        </div>
+    </div>
+    
+    <div id="light-panel">
+        <h2>🚦 交通信号灯</h2>
+        <div class="control-group">
+            <button id="btn-place-light">放置信号灯</button>
+        </div>
+        <div id="traffic-lights-list"></div>
+    </div>
+    
+    <div id="instructions">
+        鼠标左键拖拽旋转 | 右键拖拽平移 | 滚轮缩放
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
