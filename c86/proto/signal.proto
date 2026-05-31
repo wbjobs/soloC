@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package radiosignal;
+
+message TimeSeries {
+  string task_id = 1;
+  repeated double data = 2;
+  double sampling_rate = 3;
+  double start_frequency = 4;
+  double end_frequency = 5;
+  double dm_min = 6;
+  double dm_max = 7;
+  int64 timestamp = 8;
+  string source_name = 9;
+}
+
+message ProcessingTask {
+  string task_id = 1;
+  TimeSeries signal_data = 2;
+  int64 submitted_at = 3;
+}
+
+message Candidate {
+  double period = 1;
+  double snr = 2;
+  double dm = 3;
+  double significance = 4;
+  int32 pulse_count = 5;
+}
+
+message PulsarInfo {
+  string name = 1;
+  double period = 2;
+  double dm = 3;
+  double snr = 4;
+  string ra = 5;
+  string dec = 6;
+  string type = 7;
+}
+
+message MatchResult {
+  PulsarInfo pulsar = 1;
+  double similarity = 2;
+  bool matched = 3;
+  double threshold = 4;
+}
+
+message CandidateWithProfile {
+  double period = 1;
+  double snr = 2;
+  double dm = 3;
+  double significance = 4;
+  int32 pulse_count = 5;
+  repeated double profile = 6;
+  repeated double normalized_profile = 7;
+  string ascii_plot = 8;
+  repeated MatchResult matches = 9;
+  MatchResult best_match = 10;
+}
+
+message RFIInfo {
+  double frequency_hz = 1;
+  int32 bin_index = 2;
+  double magnitude = 3;
+  double threshold = 4;
+  bool flagged = 5;
+}
+
+message ProcessingResult {
+  string task_id = 1;
+  repeated CandidateWithProfile candidates = 2;
+  int64 started_at = 3;
+  int64 completed_at = 4;
+  double processing_time_ms = 5;
+  double initial_snr = 6;
+  double final_snr = 7;
+  string status = 8;
+  string error_message = 9;
+  bool rfi_removed = 10;
+  int32 rfi_count = 11;
+  repeated RFIInfo rfi_info = 12;
+}
+
+message TaskStatusRequest {
+  string task_id = 1;
+}
+
+message TaskStatusResponse {
+  string task_id = 1;
+  string status = 2;
+  double progress = 3;
+  int64 submitted_at = 4;
+  int64 started_at = 5;
+  int64 completed_at = 6;
+  int32 candidate_count = 7;
+}
