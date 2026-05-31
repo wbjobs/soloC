@@ -1,0 +1,24 @@
+{
+  "name": "sql-impact-analysis-service",
+  "version": "1.0.0",
+  "description": "SQL 变更影响分析服务",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "worker": "node src/worker.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "express": "^4.18.2",
+    "joi": "^17.11.0",
+    "mongoose": "^7.6.3",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1"
+  }
+}
