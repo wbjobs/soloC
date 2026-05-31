@@ -1,0 +1,13 @@
+[hosts]
+
+[hosts.my-server]
+user = "username"
+host = "192.168.1.100"
+port = 22
+path = "/home/username"
+
+[hosts.work]
+user = "developer"
+host = "work.example.com"
+port = 2222
+path = "/var/www"

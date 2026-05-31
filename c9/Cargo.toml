@@ -1,0 +1,24 @@
+[package]
+name = "remotefs-cli"
+version = "0.3.0"
+edition = "2021"
+description = "A command-line tool for syncing and browsing remote directories via SSH with TUI"
+
+[dependencies]
+clap = { version = "4.5.0", features = ["derive"] }
+tokio = { version = "1.36.0", features = ["full"] }
+crossterm = "0.27.1"
+tui = "0.26.3"
+serde = { version = "1.0.196", features = ["derive"] }
+toml = "0.8.10"
+anyhow = "1.0.80"
+thiserror = "1.0.57"
+lru = "0.12.3"
+async-trait = "0.1.77"
+dirs = "5.0.1"
+ssh2 = "0.10.6"
+chrono = "0.4.34"
+users = "0.11.0"
+walkdir = "2.5.0"
+notify = "6.1.1"
+notify-debouncer-mini = "0.4.1"
