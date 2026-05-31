@@ -1,0 +1,13 @@
+{
+  "name": "galaxy-visualization-backend",
+  "version": "1.0.0",
+  "description": "C++ backend for galaxy visualization data serving",
+  "scripts": {
+    "build": "cmake -B build && cmake --build build",
+    "build:release": "cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release",
+    "dev": "cd build && Debug\\galaxy_backend.exe"
+  },
+  "keywords": ["hdf5", "visualization", "drogon"],
+  "author": "",
+  "license": "MIT"
+}

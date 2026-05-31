@@ -1,0 +1,183 @@
+#app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+#canvas-container {
+  width: 100%;
+  height: 100%;
+}
+
+.controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 450px;
+}
+
+.render-mode-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.render-mode-controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #444;
+  color: white;
+  transition: background 0.2s;
+}
+
+.render-mode-controls button.active {
+  background: #9C27B0;
+}
+
+.render-mode-controls button:hover {
+  background: #555;
+}
+
+.render-mode-controls button.active:hover {
+  background: #7B1FA2;
+}
+
+.volume-params {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.param-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.param-item input[type="range"] {
+  flex: 1;
+  cursor: pointer;
+}
+
+.axis-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.axis-controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #444;
+  color: white;
+  transition: background 0.2s;
+}
+
+.axis-controls button.active {
+  background: #2196F3;
+}
+
+.axis-controls button:hover {
+  background: #555;
+}
+
+.axis-controls button.active:hover {
+  background: #1976D2;
+}
+
+.slice-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slice-control input[type="range"] {
+  flex: 1;
+  cursor: pointer;
+}
+
+.timeline-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.play-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.play-controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  transition: background 0.2s;
+}
+
+.play-controls button:hover {
+  background: #45a049;
+}
+
+.play-controls button.pause {
+  background: #f44336;
+}
+
+.play-controls button.pause:hover {
+  background: #da190b;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeline-slider {
+  width: 100%;
+  cursor: pointer;
+}
+
+.stats-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.performance-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px 15px;
+  border-radius: 5px;
+  color: white;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.performance-info div {
+  margin: 3px 0;
+}
