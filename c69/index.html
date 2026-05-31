@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGPU 3D 粒子生命体模拟</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="ui-panel">
+    <h2>粒子生命规则</h2>
+    <div class="control-group">
+      <label>出生阈值: <span id="birth-value">4</span></label>
+      <input type="range" id="birth-threshold" min="1" max="26" value="4">
+    </div>
+    <div class="control-group">
+      <label>存活最小值: <span id="survive-min-value">2</span></label>
+      <input type="range" id="survive-min" min="1" max="26" value="2">
+    </div>
+    <div class="control-group">
+      <label>存活最大值: <span id="survive-max-value">5</span></label>
+      <input type="range" id="survive-max" min="1" max="26" value="5">
+    </div>
+    <div class="control-group">
+      <label>更新速度 (ms): <span id="speed-value">100</span></label>
+      <input type="range" id="update-speed" min="10" max="500" value="100">
+    </div>
+    <div class="control-group">
+      <label>变异率: <span id="mutation-value">0.1</span></label>
+      <input type="range" id="mutation-rate" min="0" max="0.5" step="0.01" value="0.1">
+    </div>
+    <div class="control-group">
+      <label>选择压力: <span id="selection-value">0.5</span></label>
+      <input type="range" id="selection-pressure" min="0.1" max="1" step="0.05" value="0.5">
+    </div>
+    <div class="generation-info">
+      <h3>🧬 第 <span id="generation-count">1</span> 代</h3>
+      <p>存活粒子: <span id="alive-count">0</span> / <span id="total-count">0</span></p>
+      <p>平均年龄: <span id="avg-age">0</span> 帧</p>
+    </div>
+    <div class="button-group">
+      <button id="pause-btn">暂停</button>
+      <button id="reset-btn">重置</button>
+      <button id="random-btn">随机化</button>
+      <button id="evolve-btn">进化</button>
+    </div>
+    <div class="histogram-section">
+      <h4>🎨 色相分布</h4>
+      <div class="histogram" id="hue-histogram"></div>
+      <div class="histogram-labels">
+        <span>红</span><span>黄</span><span>绿</span><span>青</span><span>蓝</span><span>紫</span><span>红</span>
+      </div>
+      <h4>⚡ 出生偏好分布</h4>
+      <div class="histogram" id="birth-histogram"></div>
+      <div class="histogram-labels">
+        <span>-1</span><span>-0.5</span><span>0</span><span>0.5</span><span>1</span>
+      </div>
+      <h4>🛡️ 存活偏好分布</h4>
+      <div class="histogram" id="survive-histogram"></div>
+      <div class="histogram-labels">
+        <span>-1</span><span>-0.5</span><span>0</span><span>0.5</span><span>1</span>
+      </div>
+      <h4>📊 年龄分布</h4>
+      <div class="histogram" id="age-histogram"></div>
+    </div>
+  </div>
+  <script type="module" src="src/main.ts"></script>
+</body>
+</html>
