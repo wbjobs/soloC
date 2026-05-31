@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:5.0
+    container_name: meeting-room-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: meeting_room
+
+  backend:
+    build: ./backend
+    container_name: meeting-room-backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/meeting_room
+      - VOICE_SERVICE_URL=http://voice-service:5000
+
+  voice-service:
+    build: ./voice-service
+    container_name: meeting-room-voice
+    ports:
+      - "5000:5000"
+
+  web:
+    build: ./web
+    container_name: meeting-room-web
+    ports:
+      - "3001:3000"
+
+volumes:
+  mongodb_data:

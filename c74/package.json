@@ -1,0 +1,19 @@
+{
+  "name": "meeting-room-system",
+  "version": "1.0.0",
+  "description": "智能会议室预订系统",
+  "scripts": {
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:voice": "cd voice-service && python app.py",
+    "dev:web": "cd web && npm start",
+    "dev:mobile": "cd mobile && npm start",
+    "install:all": "npm run install:backend && npm run install:voice && npm run install:web && npm run install:mobile",
+    "install:backend": "cd backend && npm install",
+    "install:voice": "cd voice-service && pip install -r requirements.txt",
+    "install:web": "cd web && npm install",
+    "install:mobile": "cd mobile && npm install"
+  },
+  "keywords": ["meeting-room", "voice-recognition", "nestjs", "react-native"],
+  "author": "",
+  "license": "MIT"
+}
