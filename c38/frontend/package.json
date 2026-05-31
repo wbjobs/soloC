@@ -1,0 +1,16 @@
+{
+  "name": "geological-model-viewer",
+  "version": "1.0.0",
+  "description": "3D Geological Model Viewer with Section Planes",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.8"
+  }
+}

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三维地质模型剖切系统</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      background: #1a1a2e;
+    }
+    #container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+    }
+    .controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      width: 320px;
+      z-index: 100;
+    }
+    .controls h3 {
+      color: #1a1a2e;
+      margin-bottom: 15px;
+      font-size: 18px;
+      border-bottom: 2px solid #4a90d9;
+      padding-bottom: 10px;
+    }
+    .control-group {
+      margin-bottom: 15px;
+    }
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .control-group input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #e0e0e0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4a90d9;
+      cursor: pointer;
+    }
+    .value-display {
+      text-align: right;
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .checkbox-group {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .properties-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      width: 350px;
+      z-index: 100;
+    }
+    .properties-panel h3 {
+      color: #1a1a2e;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+    .property-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .property-label {
+      color: #666;
+      font-size: 14px;
+    }
+    .property-value {
+      color: #1a1a2e;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 30px 50px;
+      border-radius: 12px;
+      font-size: 18px;
+      color: #333;
+      z-index: 200;
+    }
+
+    .timeline-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.95);
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      width: 600px;
+      z-index: 100;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .timeline-header h3 {
+      color: #1a1a2e;
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .timeline-info {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .timeline-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #4a90d9, #357abd);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(74, 144, 217, 0.4);
+    }
+
+    .play-btn.playing {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+    }
+
+    .speed-control {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .speed-control label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .speed-control select {
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-size: 12px;
+    }
+
+    .timeline-slider-container {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .timeline-slider-container input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #4a90d9 0%, #4a90d9 var(--progress, 0%), #e0e0e0 var(--progress, 0%), #e0e0e0 100%);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .timeline-slider-container input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4a90d9;
+      cursor: pointer;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .timeline-markers {
+      position: absolute;
+      top: 10px;
+      left: 0;
+      right: 0;
+      height: 6px;
+      pointer-events: none;
+    }
+
+    .timeline-marker {
+      position: absolute;
+      width: 4px;
+      height: 100%;
+      background: #ff9800;
+      transform: translateX(-50%);
+      border-radius: 2px;
+    }
+
+    .timeline-marker.keyframe {
+      background: #4caf50;
+      height: 12px;
+      top: -3px;
+    }
+
+    .timeline-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="canvas-container"></div>
+    
+    <div class="controls" id="controls">
+      <h3>剖切控制</h3>
+      
+      <div class="control-group">
+        <label>X方向剖切平面</label>
+        <input type="range" id="planeX" min="0" max="100" value="50">
+        <div class="value-display" id="planeXValue">50%</div>
+      </div>
+      
+      <div class="control-group">
+        <label>Y方向剖切平面</label>
+        <input type="range" id="planeY" min="0" max="100" value="50">
+        <div class="value-display" id="planeYValue">50%</div>
+      </div>
+      
+      <div class="control-group">
+        <label>Z方向剖切平面</label>
+        <input type="range" id="planeZ" min="0" max="100" value="50">
+        <div class="value-display" id="planeZValue">50%</div>
+      </div>
+      
+      <div class="control-group">
+        <label>平面透明度</label>
+        <input type="range" id="opacity" min="0" max="100" value="50">
+        <div class="value-display" id="opacityValue">50%</div>
+      </div>
+      
+      <div class="control-group">
+        <label>显示平面</label>
+        <div class="checkbox-group">
+          <div class="checkbox-item">
+            <input type="checkbox" id="showX" checked>
+            <label for="showX">X平面</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="showY" checked>
+            <label for="showY">Y平面</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="showZ" checked>
+            <label for="showZ">Z平面</label>
+          </div>
+        </div>
+      </div>
+
+      <hr style="margin: 20px 0; border-color: #eee;">
+      
+      <h3>模型上传</h3>
+      <div class="control-group">
+        <label>上传多时相模型 (OBJ)</label>
+        <input type="file" id="modelUpload" multiple accept=".obj" style="width: 100%; padding: 5px;">
+        <div class="value-display" id="uploadStatus">支持多选上传多个阶段模型</div>
+      </div>
+      <div class="control-group">
+        <button id="resetModels" style="width: 100%; padding: 8px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          重置为示例模型
+        </button>
+      </div>
+    </div>
+    
+    <div class="properties-panel" id="properties">
+      <h3>岩石属性 - 当前切片</h3>
+      <div id="propertiesContent">
+        <div class="property-item">
+          <span class="property-label">加载中...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-panel" id="timeline">
+      <div class="timeline-header">
+        <h3>地质演化动画</h3>
+        <div class="timeline-info" id="timelineInfo">加载中...</div>
+      </div>
+      <div class="timeline-controls">
+        <button class="play-btn" id="prevFrame" title="上一帧">⏮</button>
+        <button class="play-btn" id="playPause" title="播放/暂停">▶</button>
+        <button class="play-btn" id="nextFrame" title="下一帧">⏭</button>
+        <div class="speed-control">
+          <label>速度:</label>
+          <select id="playSpeed">
+            <option value="0.25">0.25x</option>
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+          </select>
+        </div>
+      </div>
+      <div class="timeline-slider-container">
+        <input type="range" id="timelineSlider" min="0" max="100" value="0">
+        <div class="timeline-markers" id="timelineMarkers"></div>
+      </div>
+      <div class="timeline-labels">
+        <span id="frameLabel">帧: 0 / 0</span>
+        <span id="phaseLabel">阶段: 0</span>
+      </div>
+    </div>
+    
+    <div class="loading" id="loading">正在加载模型...</div>
+  </div>
+  
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
