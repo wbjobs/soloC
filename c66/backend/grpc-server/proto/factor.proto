@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package factor;
+
+service FactorService {
+  rpc GetRecentFactors(GetRecentFactorsRequest) returns (GetRecentFactorsResponse) {}
+  rpc GetHistoricalFactors(GetHistoricalFactorsRequest) returns (stream FactorData) {}
+  rpc RunBacktest(RunBacktestRequest) returns (stream BacktestProgress) {}
+  rpc StreamFactors(StreamFactorsRequest) returns (stream FactorData) {}
+}
+
+message FactorData {
+  string symbol = 1;
+  double buy_pressure = 2;
+  double sell_pressure = 3;
+  double net_flow = 4;
+  double large_order_net_flow = 5;
+  string timestamp = 6;
+}
+
+message GetRecentFactorsRequest {
+  string symbol = 1;
+  int32 minutes = 2;
+}
+
+message GetRecentFactorsResponse {
+  repeated FactorData factors = 1;
+}
+
+message GetHistoricalFactorsRequest {
+  string symbol = 1;
+  string start_time = 2;
+  string end_time = 3;
+  int32 page_size = 4;
+}
+
+message Strategy {
+  string condition = 1;
+  string action = 2;
+}
+
+message RunBacktestRequest {
+  string symbol = 1;
+  string start_time = 2;
+  string end_time = 3;
+  Strategy strategy = 4;
+}
+
+message Trade {
+  string timestamp = 1;
+  string action = 2;
+  double price = 3;
+  double factor_a = 4;
+  double factor_b = 5;
+}
+
+message BacktestProgress {
+  int32 current = 1;
+  int32 total = 2;
+  double total_return = 3;
+  int32 win_count = 4;
+  int32 loss_count = 5;
+  repeated Trade trades = 6;
+  bool completed = 7;
+}
+
+message StreamFactorsRequest {
+  string symbol = 1;
+  int32 batch_size = 2;
+}
