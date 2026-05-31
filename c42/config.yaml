@@ -1,0 +1,70 @@
+tcp_port: 9000
+http_port: 8080
+
+redis_addr: "localhost:6379"
+redis_password: ""
+redis_db: 0
+redis_key: "cleaned_logs"
+
+elasticsearch:
+  addresses:
+    - "http://localhost:9200"
+  username: ""
+  password: ""
+  index: "logs"
+
+rule_versions:
+  current_version: "v_initial"
+  versions:
+    - version_id: "v_initial"
+      created_at: 2024-01-01T00:00:00Z
+      created_by: "system"
+      comment: "Initial version of rules"
+      rules:
+        - id: "rule_001"
+          name: "Level Mapping"
+          type: "field_mapping"
+          source_field: "level"
+          target_field: "log_level"
+          mapping:
+            "1": "DEBUG"
+            "2": "INFO"
+            "3": "WARN"
+            "4": "ERROR"
+          enabled: true
+
+        - id: "rule_002"
+          name: "Extract User ID"
+          type: "regex_match"
+          source_field: "message"
+          target_field: "user_id"
+          pattern: "user_id=([a-zA-Z0-9]+)"
+          enabled: true
+
+        - id: "rule_003"
+          name: "Debug Filter"
+          type: "blacklist"
+          source_field: "message"
+          blacklist:
+            - "debug"
+            - "trace"
+            - "verbose"
+          enabled: false
+
+        - id: "rule_004"
+          name: "Rename Service Field"
+          type: "field_rename"
+          source_field: "service"
+          target_field: "service_name"
+          enabled: true
+
+        - id: "rule_005"
+          name: "Remove Temp Field"
+          type: "field_remove"
+          source_field: "temp_data"
+          enabled: true
+  canary:
+    enabled: false
+    new_version_id: ""
+    percentage: 0
+    hash_field: "message"
