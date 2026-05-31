@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: iot-ota-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iot_ota
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - iot-ota-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: iot-ota-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - iot-ota-network
+
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: iot-ota-nacos
+    environment:
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_DB_NAME: nacos
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: root
+      NACOS_AUTH_ENABLE: false
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    depends_on:
+      - mysql
+    networks:
+      - iot-ota-network
+
+  ota-gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway/Dockerfile
+    container_name: iot-ota-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - nacos
+      - redis
+      - mysql
+    networks:
+      - iot-ota-network
+    restart: on-failure
+
+  firmware-service:
+    build:
+      context: .
+      dockerfile: docker/firmware/Dockerfile
+    container_name: iot-ota-firmware
+    ports:
+      - "8081:8081"
+    depends_on:
+      - nacos
+      - redis
+      - mysql
+    networks:
+      - iot-ota-network
+    restart: on-failure
+
+  device-service:
+    build:
+      context: .
+      dockerfile: docker/device/Dockerfile
+    container_name: iot-ota-device
+    ports:
+      - "8082:8082"
+    depends_on:
+      - nacos
+      - redis
+      - mysql
+    networks:
+      - iot-ota-network
+    restart: on-failure
+
+  upgrade-service:
+    build:
+      context: .
+      dockerfile: docker/upgrade/Dockerfile
+    container_name: iot-ota-upgrade
+    ports:
+      - "8083:8083"
+    depends_on:
+      - nacos
+      - redis
+      - mysql
+    networks:
+      - iot-ota-network
+    restart: on-failure
+
+  log-service:
+    build:
+      context: .
+      dockerfile: docker/log/Dockerfile
+    container_name: iot-ota-log
+    ports:
+      - "8084:8084"
+    depends_on:
+      - nacos
+      - redis
+      - mysql
+    networks:
+      - iot-ota-network
+    restart: on-failure
+
+  admin-api:
+    build:
+      context: .
+      dockerfile: docker/admin/Dockerfile
+    container_name: iot-ota-admin
+    ports:
+      - "8085:8085"
+    depends_on:
+      - nacos
+      - redis
+      - mysql
+    networks:
+      - iot-ota-network
+    restart: on-failure
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  iot-ota-network:
+    driver: bridge

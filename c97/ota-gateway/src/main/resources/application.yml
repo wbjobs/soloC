@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ota-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: ota
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: firmware-service
+          uri: lb://firmware-service
+          predicates:
+            - Path=/api/firmware/**
+        - id: device-service
+          uri: lb://device-service
+          predicates:
+            - Path=/api/device/**
+        - id: upgrade-service
+          uri: lb://upgrade-service
+          predicates:
+            - Path=/api/upgrade/**
+        - id: log-service
+          uri: lb://log-service
+          predicates:
+            - Path=/api/log/**
+        - id: admin-api
+          uri: lb://admin-api
+          predicates:
+            - Path=/api/admin/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: debug
