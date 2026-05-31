@@ -1,0 +1,18 @@
+[package]
+name = "iot-simulator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rumqttc = "0.24"
+tokio = { version = "1.0", features = ["full"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"
+chrono = "0.4"
+clap = { version = "4.0", features = ["derive"] }
+log = "0.4"
+env_logger = "0.10"
+regex = "1.10"
+evalexpr = "8.0"
