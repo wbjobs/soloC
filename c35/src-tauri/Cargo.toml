@@ -1,0 +1,39 @@
+[package]
+name = "knowledge-reader"
+version = "0.1.0"
+description = "知识阅读器 - 支持电子书阅读、批注和知识图谱"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "knowledge_reader_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0", features = [] }
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri-plugin-dialog = "2.0.0"
+tauri-plugin-fs = "2.0.0"
+
+rusqlite = { version = "0.31", features = ["bundled"] }
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1.0"
+anyhow = "1.0"
+
+zip = "0.6"
+xml-rs = "0.8"
+lopdf = "0.33"
+
+rust-bert = { version = "0.23", default-features = false, features = ["bert"] }
+tch = "0.16"
+tch-rs = "0.16"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
