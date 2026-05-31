@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>差异表达基因分析平台</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .upload-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .mode-selector {
+            margin-bottom: 20px;
+        }
+        .mode-selector label {
+            color: #555;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+        .mode-selector select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .file-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .file-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .file-group label {
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .file-group input[type="file"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .file-group p {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            font-weight: 600;
+        }
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .analyze-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading.show {
+            display: block;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .results-section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        .results-section.show {
+            display: block;
+        }
+        .results-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 15px;
+            transition: background 0.2s;
+        }
+        .export-btn:hover {
+            background: #218838;
+        }
+        .plot-container {
+            margin-bottom: 30px;
+        }
+        .gene-table {
+            overflow-x: auto;
+        }
+        .gene-table h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .gene-link {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .gene-link:hover {
+            text-decoration: underline;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .gene-detail {
+            margin-bottom: 20px;
+        }
+        .gene-detail p {
+            margin: 10px 0;
+            color: #555;
+        }
+        .gene-detail strong {
+            color: #333;
+        }
+        .pathway-list {
+            list-style: none;
+        }
+        .pathway-list li {
+            padding: 10px;
+            background: #f5f5f5;
+            margin-bottom: 8px;
+            border-radius: 5px;
+        }
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        .venn-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .venn-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .venn-legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .venn-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .venn-info p {
+            color: #555;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>差异表达基因分析平台</h1>
+        
+        <div class="upload-section">
+            <h2>上传数据</h2>
+            <div class="mode-selector">
+                <label for="analysis-mode">分析模式:</label>
+                <select id="analysis-mode">
+                    <option value="pairwise">自动检测 (根据分组数量)</option>
+                    <option value="multi">多组比较模式</option>
+                </select>
+            </div>
+            <div class="file-inputs">
+                <div class="file-group">
+                    <label for="expression-file">基因表达矩阵 (CSV)</label>
+                    <input type="file" id="expression-file" accept=".csv,.txt">
+                    <p>行=基因，列=样本，数值为原始计数</p>
+                </div>
+                <div class="file-group">
+                    <label for="group-file">分组信息 (CSV)</label>
+                    <input type="file" id="group-file" accept=".csv,.txt">
+                    <p>行=样本，列=分组名称 (支持3组以上)</p>
+                </div>
+            </div>
+            <button class="analyze-btn" id="analyze-btn">开始差异表达分析</button>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在执行分析，请稍候...</p>
+            </div>
+            <div class="error-message" id="error-message"></div>
+        </div>
+        
+        <div class="results-section" id="results-section">
+            <h2>分析结果</h2>
+            <div class="tabs" id="results-tabs"></div>
+            <div id="tab-contents"></div>
+        </div>
+    </div>
+    
+    <div class="modal" id="gene-modal">
+        <div class="modal-content">
+            <span class="close" id="close-modal">&times;</span>
+            <h3 id="modal-gene-name">基因详情</h3>
+            <div class="gene-detail" id="gene-detail"></div>
+            <h4>KEGG 通路映射</h4>
+            <ul class="pathway-list" id="pathway-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+        const resultsSection = document.getElementById('results-section');
+        const errorMessage = document.getElementById('error-message');
+        const geneModal = document.getElementById('gene-modal');
+        const closeModal = document.getElementById('close-modal');
+        const resultsTabs = document.getElementById('results-tabs');
+        const tabContents = document.getElementById('tab-contents');
+        
+        let currentResults = null;
+        let currentComparisonIndex = 0;
+        
+        analyzeBtn.addEventListener('click', async () => {
+            const exprFile = document.getElementById('expression-file').files[0];
+            const groupFile = document.getElementById('group-file').files[0];
+            const mode = document.getElementById('analysis-mode').value;
+            
+            if (!exprFile || !groupFile) {
+                showError('请选择两个文件');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('expression_file', exprFile);
+            formData.append('group_file', groupFile);
+            formData.append('mode', mode);
+            
+            analyzeBtn.disabled = true;
+            loading.classList.add('show');
+            errorMessage.classList.remove('show');
+            resultsSection.classList.remove('show');
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentResults = result;
+                    displayResults(result);
+                } else {
+                    showError(result.error || '分析失败');
+                }
+            } catch (error) {
+                showError('网络错误: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                loading.classList.remove('show');
+            }
+        });
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+        
+        function displayResults(result) {
+            resultsTabs.innerHTML = '';
+            tabContents.innerHTML = '';
+            
+            result.comparisons.forEach((comp, index) => {
+                const tabBtn = document.createElement('button');
+                tabBtn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
+                tabBtn.textContent = comp.name;
+                tabBtn.onclick = () => switchTab(index);
+                resultsTabs.appendChild(tabBtn);
+                
+                const tabContent = document.createElement('div');
+                tabContent.className = `tab-content ${index === 0 ? 'active' : ''}`;
+                tabContent.id = `tab-${index}`;
+                tabContent.innerHTML = createComparisonContent(comp, index);
+                tabContents.appendChild(tabContent);
+            });
+            
+            if (result.comparisons.length > 1) {
+                const vennTabBtn = document.createElement('button');
+                vennTabBtn.className = 'tab-btn';
+                vennTabBtn.textContent = '韦恩图 (基因交集)';
+                vennTabBtn.onclick = () => switchTab(result.comparisons.length);
+                resultsTabs.appendChild(vennTabBtn);
+                
+                const vennTabContent = document.createElement('div');
+                vennTabContent.className = 'tab-content';
+                vennTabContent.id = `tab-${result.comparisons.length}`;
+                vennTabContent.innerHTML = createVennContent(result);
+                tabContents.appendChild(vennTabContent);
+            }
+            
+            resultsSection.classList.add('show');
+            
+            setTimeout(() => {
+                result.comparisons.forEach((comp, index) => {
+                    if (index === 0) {
+                        plotVolcano(comp.all_genes, `volcano-plot-${index}`);
+                    }
+                });
+                
+                if (result.comparisons.length > 1) {
+                    plotVenn(result);
+                }
+            }, 100);
+        }
+        
+        function createComparisonContent(comp, index) {
+            return `
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="number">${comp.total_genes}</div>
+                        <div class="label">总基因数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${comp.significant_count}</div>
+                        <div class="label">显著差异基因</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${((comp.significant_count / comp.total_genes) * 100).toFixed(1)}%</div>
+                        <div class="label">显著差异比例</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${comp.method}</div>
+                        <div class="label">分析方法</div>
+                    </div>
+                </div>
+                
+                <div class="plot-container">
+                    <button class="export-btn" onclick="exportSVG('volcano-plot-${index}', 'volcano_${comp.name}')">导出 SVG</button>
+                    <div id="volcano-plot-${index}"></div>
+                </div>
+                
+                <div class="gene-table">
+                    <h3>显著性差异基因列表 (|log2FC| > 1 且 padj < 0.05)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>基因名称</th>
+                                <th>log2FC</th>
+                                <th>p-value</th>
+                                <th>padj</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${comp.significant_genes.map(gene => `
+                                <tr>
+                                    <td><a class="gene-link" onclick="showGeneDetail('${gene.gene}', ${index})">${gene.gene}</a></td>
+                                    <td>${gene.log2FoldChange.toFixed(3)}</td>
+                                    <td>${gene.pvalue.toExponential(3)}</td>
+                                    <td>${gene.padj.toExponential(3)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        function createVennContent(result) {
+            return `
+                <div class="plot-container">
+                    <button class="export-btn" onclick="exportSVG('venn-plot', 'venn_diagram')">导出 SVG</button>
+                    <div id="venn-plot"></div>
+                </div>
+                <div class="venn-info" id="venn-info"></div>
+            `;
+        }
+        
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            
+            contents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+            
+            if (index < currentResults.comparisons.length) {
+                currentComparisonIndex = index;
+                const comp = currentResults.comparisons[index];
+                setTimeout(() => {
+                    const plotDiv = document.getElementById(`volcano-plot-${index}`);
+                    if (plotDiv && plotDiv.innerHTML === '') {
+                        plotVolcano(comp.all_genes, `volcano-plot-${index}`);
+                    }
+                }, 100);
+            } else {
+                setTimeout(() => {
+                    const vennDiv = document.getElementById('venn-plot');
+                    if (vennDiv && vennDiv.innerHTML === '') {
+                        plotVenn(currentResults);
+                    }
+                }, 100);
+            }
+        }
+        
+        function plotVolcano(genes, elementId) {
+            const sortedGenes = [...genes].sort((a, b) => a.gene.localeCompare(b.gene));
+            
+            const x = sortedGenes.map(g => g.log2FoldChange);
+            const y = sortedGenes.map(g => -Math.log10(g.padj));
+            const text = sortedGenes.map(g => g.gene);
+            const customData = sortedGenes.map(g => g.gene);
+            
+            const colors = sortedGenes.map(g => {
+                if (Math.abs(g.log2FoldChange) > 1 && g.padj < 0.05) {
+                    return g.log2FoldChange > 0 ? '#e74c3c' : '#3498db';
+                }
+                return '#95a5a6';
+            });
+            
+            const trace = {
+                x: x,
+                y: y,
+                text: text,
+                customdata: customData,
+                mode: 'markers',
+                marker: {
+                    color: colors,
+                    size: 6,
+                    opacity: 0.7
+                },
+                hovertemplate:
+                    '<b>%{text}</b><br>' +
+                    'log2FC: %{x:.3f}<br>' +
+                    '-log10(padj): %{y:.3f}<br>' +
+                    '<extra></extra>'
+            };
+            
+            const maxY = Math.max(...y.filter(v => isFinite(v)), 10);
+            const minX = Math.min(...x.filter(v => isFinite(v)), -2);
+            const maxX = Math.max(...x.filter(v => isFinite(v)), 2);
+            
+            const shapes = [
+                {
+                    type: 'line',
+                    x0: -1,
+                    x1: -1,
+                    y0: 0,
+                    y1: maxY,
+                    line: {
+                        color: 'gray',
+                        dash: 'dash'
+                    }
+                },
+                {
+                    type: 'line',
+                    x0: 1,
+                    x1: 1,
+                    y0: 0,
+                    y1: maxY,
+                    line: {
+                        color: 'gray',
+                        dash: 'dash'
+                    }
+                },
+                {
+                    type: 'line',
+                    x0: minX,
+                    x1: maxX,
+                    y0: -Math.log10(0.05),
+                    y1: -Math.log10(0.05),
+                    line: {
+                        color: 'gray',
+                        dash: 'dash'
+                    }
+                }
+            ];
+            
+            const layout = {
+                title: `火山图 - ${elementId.includes('0') ? currentResults.comparisons[0].name : ''}`,
+                xaxis: {
+                    title: 'log2(Fold Change)',
+                    zeroline: false,
+                    range: [minX - 0.5, maxX + 0.5]
+                },
+                yaxis: {
+                    title: '-log10(Adjusted p-value)',
+                    zeroline: false,
+                    range: [0, maxY + 0.5]
+                },
+                shapes: shapes,
+                hovermode: 'closest',
+                showlegend: false
+            };
+            
+            Plotly.newPlot(elementId, [trace], layout);
+            
+            document.getElementById(elementId).on('plotly_click', function(data) {
+                const point = data.points[0];
+                const geneName = point.customdata || point.text;
+                if (geneName) {
+                    showGeneDetail(geneName, currentComparisonIndex);
+                }
+            });
+        }
+        
+        function plotVenn(result) {
+            const comparisons = result.comparisons;
+            const geneSets = result.gene_sets;
+            
+            const setNames = Object.keys(geneSets);
+            const sets = setNames.map(name => new Set(geneSets[name]));
+            
+            if (sets.length < 2 || sets.length > 3) {
+                document.getElementById('venn-info').innerHTML = 
+                    `<p>韦恩图目前支持 2-3 组比较，当前为 ${sets.length} 组</p>`;
+                return;
+            }
+            
+            const colors = ['rgba(231, 76, 60, 0.5)', 'rgba(52, 152, 219, 0.5)', 'rgba(46, 204, 113, 0.5)'];
+            const lineColors = ['rgb(231, 76, 60)', 'rgb(52, 152, 219)', 'rgb(46, 204, 113)'];
+            
+            const vennData = [];
+            let vennInfo = '';
+            
+            if (sets.length === 2) {
+                const [setA, setB] = sets;
+                const [nameA, nameB] = setNames;
+                
+                const onlyA = new Set([...setA].filter(x => !setB.has(x)));
+                const onlyB = new Set([...setB].filter(x => !setA.has(x)));
+                const intersection = new Set([...setA].filter(x => setB.has(x)));
+                
+                vennInfo = `
+                    <p><strong>${nameA} 特有:</strong> ${onlyA.size} 个基因</p>
+                    <p><strong>${nameB} 特有:</strong> ${onlyB.size} 个基因</p>
+                    <p><strong>交集:</strong> ${intersection.size} 个基因</p>
+                `;
+                
+                const x0 = 0.25, x1 = 0.75;
+                const y0 = 0.5, y1 = 0.5;
+                const r = 0.2;
+                
+                vennData.push({
+                    type: 'circle',
+                    xref: 'paper',
+                    yref: 'paper',
+                    x0: x0 - r, y0: y0 - r,
+                    x1: x0 + r, y1: y0 + r,
+                    fillcolor: colors[0],
+                    line: { color: lineColors[0], width: 2 }
+                });
+                
+                vennData.push({
+                    type: 'circle',
+                    xref: 'paper',
+                    yref: 'paper',
+                    x0: x1 - r, y0: y1 - r,
+                    x1: x1 + r, y1: y1 + r,
+                    fillcolor: colors[1],
+                    line: { color: lineColors[1], width: 2 }
+                });
+                
+                const annotations = [
+                    { x: x0 - 0.1, y: y0, xref: 'paper', yref: 'paper', text: onlyA.size, showarrow: false, font: { size: 20, color: 'white' } },
+                    { x: x1 + 0.1, y: y1, xref: 'paper', yref: 'paper', text: onlyB.size, showarrow: false, font: { size: 20, color: 'white' } },
+                    { x: (x0 + x1) / 2, y: y0, xref: 'paper', yref: 'paper', text: intersection.size, showarrow: false, font: { size: 20 } },
+                    { x: x0, y: y0 + r + 0.05, xref: 'paper', yref: 'paper', text: nameA, showarrow: false, font: { size: 14, color: lineColors[0] } },
+                    { x: x1, y: y1 + r + 0.05, xref: 'paper', yref: 'paper', text: nameB, showarrow: false, font: { size: 14, color: lineColors[1] } }
+                ];
+                
+                const layout = {
+                    title: '韦恩图 - 差异基因交集',
+                    xaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [0, 1] },
+                    yaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [0, 1] },
+                    shapes: vennData,
+                    annotations: annotations,
+                    width: 800,
+                    height: 600
+                };
+                
+                Plotly.newPlot('venn-plot', [], layout);
+                
+            } else if (sets.length === 3) {
+                const [setA, setB, setC] = sets;
+                const [nameA, nameB, nameC] = setNames;
+                
+                const onlyA = new Set([...setA].filter(x => !setB.has(x) && !setC.has(x)));
+                const onlyB = new Set([...setB].filter(x => !setA.has(x) && !setC.has(x)));
+                const onlyC = new Set([...setC].filter(x => !setA.has(x) && !setB.has(x)));
+                const ABonly = new Set([...setA].filter(x => setB.has(x) && !setC.has(x)));
+                const AConly = new Set([...setA].filter(x => setC.has(x) && !setB.has(x)));
+                const BConly = new Set([...setB].filter(x => setC.has(x) && !setA.has(x)));
+                const ABC = new Set([...setA].filter(x => setB.has(x) && setC.has(x)));
+                
+                vennInfo = `
+                    <p><strong>${nameA} 特有:</strong> ${onlyA.size} 个基因</p>
+                    <p><strong>${nameB} 特有:</strong> ${onlyB.size} 个基因</p>
+                    <p><strong>${nameC} 特有:</strong> ${onlyC.size} 个基因</p>
+                    <p><strong>${nameA} ∩ ${nameB}:</strong> ${ABonly.size} 个基因</p>
+                    <p><strong>${nameA} ∩ ${nameC}:</strong> ${AConly.size} 个基因</p>
+                    <p><strong>${nameB} ∩ ${nameC}:</strong> ${BConly.size} 个基因</p>
+                    <p><strong>${nameA} ∩ ${nameB} ∩ ${nameC}:</strong> ${ABC.size} 个基因</p>
+                `;
+                
+                const x0 = 0.4, y0 = 0.3;
+                const x1 = 0.6, y1 = 0.3;
+                const x2 = 0.5, y2 = 0.55;
+                const r = 0.18;
+                
+                vennData.push({
+                    type: 'circle',
+                    xref: 'paper', yref: 'paper',
+                    x0: x0 - r, y0: y0 - r,
+                    x1: x0 + r, y1: y0 + r,
+                    fillcolor: colors[0],
+                    line: { color: lineColors[0], width: 2 }
+                });
+                vennData.push({
+                    type: 'circle',
+                    xref: 'paper', yref: 'paper',
+                    x0: x1 - r, y0: y1 - r,
+                    x1: x1 + r, y1: y1 + r,
+                    fillcolor: colors[1],
+                    line: { color: lineColors[1], width: 2 }
+                });
+                vennData.push({
+                    type: 'circle',
+                    xref: 'paper', yref: 'paper',
+                    x0: x2 - r, y0: y2 - r,
+                    x1: x2 + r, y1: y2 + r,
+                    fillcolor: colors[2],
+                    line: { color: lineColors[2], width: 2 }
+                });
+                
+                const annotations = [
+                    { x: x0 - 0.08, y: y0 - 0.05, xref: 'paper', yref: 'paper', text: onlyA.size, showarrow: false, font: { size: 16, color: 'white' } },
+                    { x: x1 + 0.08, y: y1 - 0.05, xref: 'paper', yref: 'paper', text: onlyB.size, showarrow: false, font: { size: 16, color: 'white' } },
+                    { x: x2, y: y2 + 0.12, xref: 'paper', yref: 'paper', text: onlyC.size, showarrow: false, font: { size: 16, color: 'white' } },
+                    { x: (x0 + x1) / 2, y: y0 - 0.02, xref: 'paper', yref: 'paper', text: ABonly.size, showarrow: false, font: { size: 14 } },
+                    { x: x0 - 0.02, y: (y0 + y2) / 2, xref: 'paper', yref: 'paper', text: AConly.size, showarrow: false, font: { size: 14 } },
+                    { x: x1 + 0.02, y: (y1 + y2) / 2, xref: 'paper', yref: 'paper', text: BConly.size, showarrow: false, font: { size: 14 } },
+                    { x: (x0 + x1 + x2) / 3, y: (y0 + y1 + y2) / 3, xref: 'paper', yref: 'paper', text: ABC.size, showarrow: false, font: { size: 16, weight: 'bold' } },
+                    { x: x0 - 0.1, y: y0 - 0.15, xref: 'paper', yref: 'paper', text: nameA, showarrow: false, font: { size: 12, color: lineColors[0] } },
+                    { x: x1 + 0.1, y: y1 - 0.15, xref: 'paper', yref: 'paper', text: nameB, showarrow: false, font: { size: 12, color: lineColors[1] } },
+                    { x: x2, y: y2 + 0.2, xref: 'paper', yref: 'paper', text: nameC, showarrow: false, font: { size: 12, color: lineColors[2] } }
+                ];
+                
+                const layout = {
+                    title: '韦恩图 - 差异基因交集',
+                    xaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [0, 1] },
+                    yaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [0, 1] },
+                    shapes: vennData,
+                    annotations: annotations,
+                    width: 800,
+                    height: 600
+                };
+                
+                Plotly.newPlot('venn-plot', [], layout);
+            }
+            
+            document.getElementById('venn-info').innerHTML = vennInfo;
+        }
+        
+        async function showGeneDetail(geneName, comparisonIndex) {
+            const comp = currentResults.comparisons[comparisonIndex];
+            const gene = comp.all_genes.find(g => g.gene === geneName);
+            if (!gene) return;
+            
+            document.getElementById('modal-gene-name').textContent = geneName;
+            
+            document.getElementById('gene-detail').innerHTML = `
+                <p><strong>比较组:</strong> ${comp.name}</p>
+                <p><strong>log2 Fold Change:</strong> ${gene.log2FoldChange.toFixed(3)}</p>
+                <p><strong>p-value:</strong> ${gene.pvalue.toExponential(3)}</p>
+                <p><strong>Adjusted p-value:</strong> ${gene.padj.toExponential(3)}</p>
+                <p><strong>显著性:</strong> ${(Math.abs(gene.log2FoldChange) > 1 && gene.padj < 0.05) ? '是' : '否'}</p>
+            `;
+            
+            const pathwayList = document.getElementById('pathway-list');
+            pathwayList.innerHTML = '<li>加载中...</li>';
+            
+            try {
+                const response = await fetch(`/kegg/${encodeURIComponent(geneName)}`);
+                const result = await response.json();
+                
+                if (result.pathways && result.pathways.length > 0) {
+                    pathwayList.innerHTML = result.pathways.map(p => 
+                        `<li>${p.id}: ${p.name}</li>`
+                    ).join('');
+                } else {
+                    pathwayList.innerHTML = '<li>未找到相关 KEGG 通路</li>';
+                }
+            } catch (error) {
+                pathwayList.innerHTML = '<li>加载通路信息失败</li>';
+            }
+            
+            geneModal.classList.add('show');
+        }
+        
+        function exportSVG(elementId, filename) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            Plotly.toImage(element, { format: 'svg', width: 800, height: 600 })
+                .then(function(dataUrl) {
+                    const link = document.createElement('a');
+                    link.download = `${filename}.svg`;
+                    link.href = dataUrl;
+                    link.click();
+                });
+        }
+        
+        closeModal.addEventListener('click', () => {
+            geneModal.classList.remove('show');
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === geneModal) {
+                geneModal.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
