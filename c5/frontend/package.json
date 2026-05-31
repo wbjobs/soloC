@@ -1,0 +1,25 @@
+{
+  "name": "ais-tracker-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "@deck.gl/core": "^8.9.35",
+    "@deck.gl/layers": "^8.9.35",
+    "@deck.gl/mapbox": "^8.9.35",
+    "mapbox-gl": "^3.1.2",
+    "@maplibre/maplibre-gl-js": "^4.1.2",
+    "echarts": "^5.5.0",
+    "vue-echarts": "^6.6.9",
+    "@msgpack/msgpack": "^3.0.0-beta2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0"
+  }
+}

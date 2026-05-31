@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: ais-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - ais-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: ais-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - ais-network
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: ais-timescaledb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ais_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - ais-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ais-backend
+    depends_on:
+      - kafka
+      - timescaledb
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC: ais-data
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: ais_db
+      WS_PORT: :8080
+      PRODUCER_RATE: 1000
+      MAX_POINTS_PER_VESSEL: 500
+      TARGET_POINTS: 50
+      EPSILON: 0.0001
+    ports:
+      - "8080:8080"
+    networks:
+      - ais-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ais-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    networks:
+      - ais-network
+
+networks:
+  ais-network:
+    driver: bridge
+
+volumes:
+  timescaledb_data:
