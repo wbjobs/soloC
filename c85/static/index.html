@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D协作建筑</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>3D协作建筑</h2>
+            <div class="form-group">
+                <label>用户名:</label>
+                <input type="text" id="username" placeholder="输入用户名" value="用户">
+            </div>
+            <div class="form-group">
+                <label>房间ID:</label>
+                <input type="text" id="room-id" placeholder="输入房间ID（留空创建新房间）">
+            </div>
+            <button id="join-btn" class="btn btn-primary">加入/创建房间</button>
+            <div id="room-list" class="room-list">
+                <h3>可用房间:</h3>
+                <ul id="rooms"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <div class="sidebar">
+            <div class="room-info">
+                <h3>房间信息</h3>
+                <p>房间ID: <span id="current-room"></span></p>
+                <p>用户: <span id="current-user"></span></p>
+            </div>
+            
+            <div class="toolbar">
+                <h3>建筑块</h3>
+                <button class="btn tool-btn" data-tool="box">立方体</button>
+                <button class="btn tool-btn" data-tool="cylinder">圆柱体</button>
+                <button class="btn tool-btn" data-tool="sphere">球体</button>
+                <button class="btn tool-btn" data-tool="select">选择</button>
+                <button class="btn tool-btn" data-tool="delete">删除</button>
+            </div>
+
+            <div class="color-picker">
+                <h3>颜色</h3>
+                <input type="color" id="block-color" value="#4CAF50">
+            </div>
+
+            <div class="transform-panel">
+                <h3>变换</h3>
+                <div class="transform-group">
+                    <label>位置</label>
+                    <input type="number" id="pos-x" step="0.1" placeholder="X">
+                    <input type="number" id="pos-y" step="0.1" placeholder="Y">
+                    <input type="number" id="pos-z" step="0.1" placeholder="Z">
+                </div>
+                <div class="transform-group">
+                    <label>缩放</label>
+                    <input type="number" id="scale-x" step="0.1" value="1" placeholder="X">
+                    <input type="number" id="scale-y" step="0.1" value="1" placeholder="Y">
+                    <input type="number" id="scale-z" step="0.1" value="1" placeholder="Z">
+                </div>
+            </div>
+
+            <div class="terrain-tools">
+                <h3>地形雕刻</h3>
+                <button class="btn tool-btn terrain-btn" data-tool="terrain_raise">提升地形</button>
+                <button class="btn tool-btn terrain-btn" data-tool="terrain_lower">降低地形</button>
+                <button class="btn tool-btn terrain-btn" data-tool="terrain_smooth">平滑地形</button>
+                <div class="brush-settings">
+                    <label>笔刷大小</label>
+                    <input type="range" id="brush-size" min="1" max="10" value="3">
+                    <span id="brush-size-value">3</span>
+                </div>
+                <div class="brush-settings">
+                    <label>笔刷强度</label>
+                    <input type="range" id="brush-strength" min="0.1" max="2" step="0.1" value="0.5">
+                    <span id="brush-strength-value">0.5</span>
+                </div>
+            </div>
+
+            <div class="templates">
+                <h3>城市模板</h3>
+                <select id="template-select">
+                    <option value="">选择模板...</option>
+                </select>
+                <button id="load-template" class="btn btn-secondary">加载模板</button>
+            </div>
+
+            <div class="scene-actions">
+                <button id="save-scene" class="btn btn-success">保存场景</button>
+                <button id="clear-scene" class="btn btn-danger">清空场景</button>
+            </div>
+
+            <div class="user-list">
+                <h3>在线用户</h3>
+                <ul id="users"></ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <canvas id="scene-canvas"></canvas>
+            <div id="cursor-overlays"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

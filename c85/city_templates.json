@@ -1,0 +1,24 @@
+{
+  "简单城市": [
+    {"id": "b1", "type": "box", "position": {"x": 0, "y": 1, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 2, "z": 2}, "color": "#4CAF50"},
+    {"id": "b2", "type": "box", "position": {"x": 4, "y": 1.5, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 3, "z": 2}, "color": "#2196F3"},
+    {"id": "b3", "type": "cylinder", "position": {"x": -4, "y": 1, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1.5, "y": 2, "z": 1.5}, "color": "#FF9800"},
+    {"id": "b4", "type": "sphere", "position": {"x": 0, "y": 1, "z": -4}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1, "y": 1, "z": 1}, "color": "#E91E63"}
+  ],
+  "摩天大楼区": [
+    {"id": "t1", "type": "box", "position": {"x": -3, "y": 3, "z": -3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 6, "z": 2}, "color": "#607D8B"},
+    {"id": "t2", "type": "box", "position": {"x": 0, "y": 4, "z": -3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 8, "z": 2}, "color": "#455A64"},
+    {"id": "t3", "type": "box", "position": {"x": 3, "y": 3.5, "z": -3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 7, "z": 2}, "color": "#37474F"},
+    {"id": "t4", "type": "box", "position": {"x": -3, "y": 2.5, "z": 3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 5, "z": 2}, "color": "#78909C"},
+    {"id": "t5", "type": "box", "position": {"x": 0, "y": 3.5, "z": 3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 7, "z": 2}, "color": "#546E7A"},
+    {"id": "t6", "type": "box", "position": {"x": 3, "y": 3, "z": 3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 2, "y": 6, "z": 2}, "color": "#607D8B"}
+  ],
+  "公园广场": [
+    {"id": "p1", "type": "cylinder", "position": {"x": 0, "y": 0.5, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 5, "y": 1, "z": 5}, "color": "#8BC34A"},
+    {"id": "p2", "type": "sphere", "position": {"x": -3, "y": 2, "z": -3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1.5, "y": 1.5, "z": 1.5}, "color": "#4CAF50"},
+    {"id": "p3", "type": "sphere", "position": {"x": 3, "y": 2, "z": -3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1.5, "y": 1.5, "z": 1.5}, "color": "#4CAF50"},
+    {"id": "p4", "type": "sphere", "position": {"x": -3, "y": 2, "z": 3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1.5, "y": 1.5, "z": 1.5}, "color": "#4CAF50"},
+    {"id": "p5", "type": "sphere", "position": {"x": 3, "y": 2, "z": 3}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1.5, "y": 1.5, "z": 1.5}, "color": "#4CAF50"},
+    {"id": "p6", "type": "box", "position": {"x": 0, "y": 0.75, "z": 0}, "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1, "y": 1.5, "z": 1}, "color": "#795548"}
+  ]
+}
