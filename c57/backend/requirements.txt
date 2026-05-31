@@ -1,0 +1,9 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+neo4j==5.16.0
+strawberry-graphql==0.211.2
+requests==2.31.0
+pydantic==2.5.3
+python-dotenv==1.0.0
+arxiv==2.0.0
+aiohttp==3.9.1
