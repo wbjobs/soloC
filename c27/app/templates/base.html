@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}数据看板平台{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; display: flex; flex-direction: column; }
+        .sidebar { width: 250px; min-height: 100vh; background: #1e293b; }
+        .sidebar .nav-link { color: #cbd5e1; padding: 12px 20px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #334155; color: white; }
+        .sidebar .nav-link i { margin-right: 10px; }
+        .main-content { flex: 1; margin-left: 250px; margin-top: 56px; }
+        .top-nav { position: fixed; top: 0; left: 250px; right: 0; z-index: 1000; background: white; border-bottom: 1px solid #e2e8f0; }
+        .logo { padding: 20px; color: white; font-size: 18px; font-weight: bold; border-bottom: 1px solid #334155; }
+        .card-chart { border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .chart-container { height: 300px; }
+        .grid-stack-item-content { padding: 10px; }
+        .drag-handle { cursor: move; }
+        .chart-card { background: white; border-radius: 8px; height: 100%; display: flex; flex-direction: column; }
+        .chart-header { padding: 10px 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .chart-body { flex: 1; padding: 10px; }
+        .chart-type-btn { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; cursor: pointer; margin-bottom: 8px; text-align: left; }
+        .chart-type-btn:hover, .chart-type-btn.selected { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .modal-xl { max-width: 90%; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="sidebar position-fixed">
+        <div class="logo">
+            <i class="bi bi-bar-chart-line me-2"></i>数据看板平台
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.index' }}" href="{{ url_for('dashboard.index') }}">
+                <i class="bi bi-speedometer2"></i>仪表盘
+            </a>
+            {% if current_user.has_permission('can_manage_data_sources') %}
+            <a class="nav-link {{ 'active' if request.endpoint == 'data_source.index' }}" href="{{ url_for('data_source.index') }}">
+                <i class="bi bi-database"></i>数据源管理
+            </a>
+            {% endif %}
+            {% if current_user.has_permission('can_manage_users') %}
+            <a class="nav-link {{ 'active' if request.endpoint == 'auth.users' }}" href="{{ url_for('auth.users') }}">
+                <i class="bi bi-people"></i>用户管理
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    
+    <nav class="top-nav px-4 py-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>{% block page_title %}{% endblock %}</span>
+            <div class="d-flex align-items-center">
+                <span class="me-3"><i class="bi bi-person-circle me-1"></i>{{ current_user.username }} ({{ current_user.role.name if current_user.role else '未知' }})</span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-box-arrow-right"></i> 退出
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="main-content p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+    {% else %}
+    <div class="flex-grow-1">
+        {% block content_no_auth %}{% endblock %}
+    </div>
+    {% endif %}
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

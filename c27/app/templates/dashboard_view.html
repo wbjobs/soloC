@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dashboard.name }}{% endblock %}
+{% block page_title %}{{ dashboard.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .view-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 15px;
+        min-height: 600px;
+    }
+    .view-chart {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        min-height: 280px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">{{ dashboard.name }}</h4>
+        <small class="text-muted">{{ dashboard.description or '' }}</small>
+    </div>
+    <div class="d-flex gap-2">
+        {% if dashboard.refresh_interval %}
+        <span class="badge bg-info me-2">
+            <i class="bi bi-arrow-repeat me-1"></i>
+            每{{ dashboard.refresh_interval }}分钟自动刷新
+        </span>
+        {% endif %}
+        {% if can_edit %}
+        <a href="{{ url_for('dashboard.edit', dashboard_id=dashboard.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i>编辑
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if dashboard.charts %}
+<div class="view-grid" id="viewGrid">
+    {% for chart in dashboard.charts %}
+    <div class="view-chart" style="grid-column: span {{ chart.width }}; grid-row: span {{ chart.height }};">
+        <div class="chart-header">
+            <span><i class="bi bi-bar-chart me-1"></i>{{ chart.name }}</span>
+            {% if chart.refresh_interval %}
+            <span class="badge bg-secondary" title="每{{ chart.refresh_interval }}分钟刷新">
+                <i class="bi bi-arrow-repeat" style="font-size: 10px;"></i>
+            </span>
+            {% endif %}
+        </div>
+        <div class="chart-body">
+            <div id="chart-{{ chart.id }}" class="chart-container"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-layout-text-window display-1 text-muted"></i>
+    <p class="mt-3 text-muted">此看板暂无图表</p>
+    {% if can_edit %}
+    <a href="{{ url_for('dashboard.edit', dashboard_id=dashboard.id) }}" class="btn btn-primary mt-2">添加图表</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dashboardId = {{ dashboard.id }};
+const charts = {};
+const chartConfigs = {};
+
+{% for chart in dashboard.charts %}
+chartConfigs[{{ chart.id }}] = {
+    id: {{ chart.id }},
+    type: '{{ chart.type }}',
+    xField: '{{ chart.x_field or '' }}',
+    yField: '{{ chart.y_field or '' }}',
+    categoryField: '{{ chart.category_field or '' }}',
+    valueField: '{{ chart.value_field or '' }}',
+    refreshInterval: {{ chart.refresh_interval or dashboard.refresh_interval or 0 }}
+};
+{% endfor %}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllCharts();
+    startAutoRefresh();
+});
+
+async function loadAllCharts() {
+    try {
+        const res = await fetch('/' + dashboardId + '/charts-data');
+        const result = await res.json();
+        
+        if (result.success) {
+            for (const [chartId, data] of Object.entries(result.charts_data)) {
+                if (data.success) {
+                    renderChart(parseInt(chartId), data.data);
+                }
+            }
+        }
+    } catch (error) {
+        const promises = Object.keys(chartConfigs).map(id => loadChart(parseInt(id)));
+        await Promise.all(promises);
+    }
+}
+
+async function loadChart(chartId) {
+    try {
+        const res = await fetch('/charts/' + chartId + '/data');
+        const result = await res.json();
+        if (result.success) {
+            renderChart(chartId, result.data);
+        }
+    } catch (error) {
+        console.error('Error loading chart', chartId, error);
+    }
+}
+
+function renderChart(chartId, data) {
+    const config = chartConfigs[chartId];
+    const dom = document.getElementById('chart-' + chartId);
+    if (!dom) return;
+    
+    const myChart = echarts.init(dom);
+    charts[chartId] = myChart;
+    
+    const option = buildEChartOption(config, data);
+    myChart.setOption(option);
+    
+    window.addEventListener('resize', function() {
+        myChart.resize();
+    });
+}
+
+function buildEChartOption(config, data) {
+    if (!data || data.length === 0) {
+        return {
+            title: { text: '暂无数据', left: 'center', top: 'center' }
+        };
+    }
+    
+    switch (config.type) {
+        case 'bar':
+        case 'line':
+        case 'area':
+            const xData = data.map(d => d[config.xField] || d[Object.keys(d)[0]]);
+            const yData = data.map(d => parseFloat(d[config.yField] || d[Object.keys(d)[1]] || 0));
+            
+            return {
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: { type: 'category', data: xData, axisLabel: { rotate: 30 } },
+                yAxis: { type: 'value' },
+                series: [{
+                    name: config.yField || '数值',
+                    type: config.type === 'area' ? 'line' : config.type,
+                    data: yData,
+                    areaStyle: config.type === 'area' ? { opacity: 0.3 } : null,
+                    smooth: config.type === 'line' || config.type === 'area'
+                }]
+            };
+        
+        case 'pie':
+            const pieData = data.map(d => ({
+                name: d[config.categoryField] || d[Object.keys(d)[0]],
+                value: parseFloat(d[config.valueField] || d[Object.keys(d)[1]] || 0)
+            }));
+            
+            return {
+                tooltip: { trigger: 'item' },
+                legend: { orient: 'vertical', left: 'left', top: 'center' },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['60%', '50%'],
+                    data: pieData,
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+                }]
+            };
+        
+        case 'heatmap':
+            const heatX = [...new Set(data.map(d => d[config.xField]))];
+            const heatY = [...new Set(data.map(d => d[config.yField]))];
+            const heatData = data.map(d => [
+                heatX.indexOf(d[config.xField]),
+                heatY.indexOf(d[config.yField]),
+                parseFloat(d[config.valueField] || 0)
+            ]);
+            
+            const maxVal = Math.max(...heatData.map(d => d[2]));
+            
+            return {
+                tooltip: { position: 'top' },
+                visualMap: { 
+                    min: 0, 
+                    max: maxVal || 100, 
+                    calculable: true, 
+                    orient: 'horizontal', 
+                    left: 'center',
+                    bottom: 0
+                },
+                grid: { left: '10%', right: '10%', top: '10%', bottom: '20%' },
+                xAxis: { type: 'category', data: heatX, splitArea: { show: true } },
+                yAxis: { type: 'category', data: heatY, splitArea: { show: true } },
+                series: [{
+                    type: 'heatmap',
+                    data: heatData,
+                    label: { show: true },
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+                }]
+            };
+        
+        case 'scatter':
+            const scatterData = data.map(d => [
+                parseFloat(d[config.xField] || 0),
+                parseFloat(d[config.yField] || 0)
+            ]);
+            
+            return {
+                tooltip: { trigger: 'item' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: { type: 'value' },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'scatter',
+                    data: scatterData,
+                    symbolSize: 10
+                }]
+            };
+        
+        default:
+            return {
+                title: { text: '未支持的图表类型', left: 'center', top: 'center' }
+            };
+    }
+}
+
+function startAutoRefresh() {
+    const hasAutoRefresh = Object.values(chartConfigs).some(c => c.refreshInterval > 0);
+    
+    if (hasAutoRefresh) {
+        setInterval(async () => {
+            try {
+                const res = await fetch('/' + dashboardId + '/charts-data');
+                const result = await res.json();
+                
+                if (result.success) {
+                    for (const [chartId, data] of Object.entries(result.charts_data)) {
+                        const config = chartConfigs[chartId];
+                        if (data.success && config && config.refreshInterval > 0 && charts[chartId]) {
+                            const option = buildEChartOption(config, data.data);
+                            charts[chartId].setOption(option, true);
+                        }
+                    }
+                }
+            } catch (error) {
+                const refreshPromises = Object.entries(chartConfigs)
+                    .filter(([id, config]) => config.refreshInterval > 0)
+                    .map(async ([chartId, config]) => {
+                        try {
+                            const res = await fetch('/charts/' + chartId + '/data');
+                            const result = await res.json();
+                            if (result.success && charts[chartId]) {
+                                const option = buildEChartOption(config, result.data);
+                                charts[chartId].setOption(option, true);
+                            }
+                        } catch (e) {
+                            console.error('Error refreshing chart', chartId, e);
+                        }
+                    });
+                await Promise.all(refreshPromises);
+            }
+        }, 60000);
+    }
+}
+</script>
+{% endblock %}

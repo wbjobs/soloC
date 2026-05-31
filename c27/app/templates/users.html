@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}用户管理{% endblock %}
+{% block page_title %}用户管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">用户列表</h4>
+    <button class="btn btn-primary" onclick="showCreateModal()">
+        <i class="bi bi-plus-circle me-1"></i>添加用户
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>角色</th>
+                <th>最后登录</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.role.name == 'admin' %}
+                    <span class="badge bg-danger">管理员</span>
+                    {% elif user.role.name == 'editor' %}
+                    <span class="badge bg-warning">编辑者</span>
+                    {% else %}
+                    <span class="badge bg-secondary">查看者</span>
+                    {% endif %}
+                </td>
+                <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '从未' }}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editUser({{ user.id }}, '{{ user.username }}', '{{ user.email }}', {{ user.role_id }})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    {% if user.id != current_user.id %}
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">添加用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="userName">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" class="form-control" id="userEmail">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-control" id="userPassword">
+                    <div class="form-text" id="passwordHint">编辑用户时留空则不修改密码</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">角色</label>
+                    <select class="form-select" id="userRole">
+                        {% for role in roles %}
+                        <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showCreateModal() {
+    document.getElementById('userModalTitle').textContent = '添加用户';
+    document.getElementById('editUserId').value = '';
+    document.getElementById('userName').value = '';
+    document.getElementById('userEmail').value = '';
+    document.getElementById('userPassword').value = '';
+    document.getElementById('passwordHint').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+function editUser(id, username, email, roleId) {
+    document.getElementById('userModalTitle').textContent = '编辑用户';
+    document.getElementById('editUserId').value = id;
+    document.getElementById('userName').value = username;
+    document.getElementById('userEmail').value = email;
+    document.getElementById('userPassword').value = '';
+    document.getElementById('userRole').value = roleId;
+    document.getElementById('passwordHint').style.display = 'block';
+    new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+async function saveUser() {
+    const editId = document.getElementById('editUserId').value;
+    const data = {
+        username: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        role_id: parseInt(document.getElementById('userRole').value)
+    };
+    
+    const password = document.getElementById('userPassword').value;
+    if (password) {
+        data.password = password;
+    }
+    
+    const url = editId ? '/auth/users/' + editId : '/auth/users/create';
+    const method = editId ? 'PUT' : 'POST';
+    
+    const res = await fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+        location.reload();
+    } else {
+        alert(result.message);
+    }
+}
+
+async function deleteUser(id) {
+    if (!confirm('确定要删除这个用户吗？')) return;
+    
+    const res = await fetch('/auth/users/' + id, {method: 'DELETE'});
+    const result = await res.json();
+    if (result.success) {
+        location.reload();
+    } else {
+        alert(result.message);
+    }
+}
+</script>
+{% endblock %}

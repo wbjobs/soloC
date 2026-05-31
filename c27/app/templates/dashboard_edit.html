@@ -1,0 +1,685 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dashboard.name }} - 编辑{% endblock %}
+{% block page_title %}编辑看板: {{ dashboard.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .widget-panel {
+        position: fixed;
+        right: 20px;
+        top: 70px;
+        width: 280px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        z-index: 100;
+        padding: 15px;
+    }
+    .chart-config-panel {
+        position: fixed;
+        right: 20px;
+        top: 70px;
+        width: 400px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        z-index: 100;
+        padding: 15px;
+        display: none;
+    }
+    .grid-stack {
+        min-height: 600px;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    .grid-stack-item {
+        min-width: 200px;
+    }
+    .chart-widget {
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .chart-widget:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    .query-preview {
+        max-height: 150px;
+        overflow: auto;
+        background: #f8fafc;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <input type="text" class="form-control-plaintext h4 mb-0" id="dashboardName" value="{{ dashboard.name }}">
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="showWidgetPanel()">
+            <i class="bi bi-plus-circle me-1"></i>添加图表
+        </button>
+        <button class="btn btn-outline-primary" onclick="saveDashboard()">
+            <i class="bi bi-save me-1"></i>保存布局
+        </button>
+        <a href="{{ url_for('dashboard.view', dashboard_id=dashboard.id) }}" class="btn btn-primary">
+            <i class="bi bi-eye me-1"></i>预览
+        </a>
+    </div>
+</div>
+
+<div id="dashboardGrid" class="grid-stack">
+    {% for chart in dashboard.charts %}
+    <div class="grid-stack-item" gs-id="{{ chart.id }}" gs-x="{{ chart.position_x }}" gs-y="{{ chart.position_y }}" gs-w="{{ chart.width }}" gs-h="{{ chart.height }}">
+        <div class="chart-card">
+            <div class="chart-header drag-handle">
+                <span>{{ chart.name }}</span>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editChart({{ chart.id }})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteChart({{ chart.id }})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div id="chart-{{ chart.id }}" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="widget-panel" id="widgetPanel" style="display:none">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">图表组件</h6>
+        <button class="btn-close" onclick="hideWidgetPanel()"></button>
+    </div>
+    <div class="row g-2">
+        <div class="col-6">
+            <div class="chart-widget" onclick="addChart('bar')">
+                <i class="bi bi-bar-chart display-4 text-primary"></i>
+                <div class="small mt-1">柱状图</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="chart-widget" onclick="addChart('line')">
+                <i class="bi bi-graph-up display-4 text-success"></i>
+                <div class="small mt-1">折线图</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="chart-widget" onclick="addChart('pie')">
+                <i class="bi bi-pie-chart display-4 text-warning"></i>
+                <div class="small mt-1">饼图</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="chart-widget" onclick="addChart('heatmap')">
+                <i class="bi bi-grid-3x3 display-4 text-info"></i>
+                <div class="small mt-1">热力图</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="chart-widget" onclick="addChart('scatter')">
+                <i class="bi bi-dot display-4 text-secondary"></i>
+                <div class="small mt-1">散点图</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="chart-widget" onclick="addChart('area')">
+                <i class="bi bi-bar-chart-line display-4 text-danger"></i>
+                <div class="small mt-1">面积图</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="chart-config-panel" id="chartConfigPanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0" id="chartConfigTitle">配置图表</h6>
+        <button class="btn-close" onclick="hideChartConfig()"></button>
+    </div>
+    <input type="hidden" id="editChartId">
+    <div class="mb-3">
+        <label class="form-label">图表名称</label>
+        <input type="text" class="form-control" id="chartName" placeholder="图表名称">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">数据源</label>
+        <select class="form-select" id="chartDataSource">
+            <option value="">请选择数据源</option>
+            {% for ds in data_sources %}
+            <option value="{{ ds.id }}">{{ ds.name }} ({{ ds.type }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">查询 SQL</label>
+        <textarea class="form-control" id="chartQuery" rows="4" placeholder="SELECT * FROM table_name"></textarea>
+    </div>
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="testQuery()">测试查询</button>
+    </div>
+    <div id="queryPreview" class="query-preview mb-3"></div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">X轴字段</label>
+            <input type="text" class="form-control" id="xField" placeholder="如: date">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Y轴字段</label>
+            <input type="text" class="form-control" id="yField" placeholder="如: value">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">分类字段</label>
+            <input type="text" class="form-control" id="categoryField" placeholder="饼图等使用">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">数值字段</label>
+            <input type="text" class="form-control" id="valueField" placeholder="饼图等使用">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">自动刷新</label>
+        <select class="form-select" id="chartRefresh">
+            <option value="0">不自动刷新</option>
+            <option value="1">每1分钟</option>
+            <option value="5">每5分钟</option>
+            <option value="30">每30分钟</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <button class="btn btn-outline-warning w-100" onclick="showAlertConfig()">
+            <i class="bi bi-bell me-1"></i>配置数据告警
+        </button>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-secondary flex-grow-1" onclick="hideChartConfig()">取消</button>
+        <button class="btn btn-primary flex-grow-1" onclick="saveChartConfig()">保存</button>
+    </div>
+</div>
+
+<div class="modal fade" id="alertConfigModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">数据告警配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="alertChartId">
+                
+                <div id="alertRulesList"></div>
+                
+                <hr>
+                
+                <h6>添加新告警规则</h6>
+                <div class="mb-3">
+                    <label class="form-label">规则名称</label>
+                    <input type="text" class="form-control" id="alertName" placeholder="如：销售额超过阈值">
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">比较字段</label>
+                        <input type="text" class="form-control" id="alertCompareField" placeholder="留空使用默认数值字段">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">聚合方式</label>
+                        <select class="form-select" id="alertAggregate">
+                            <option value="latest">最新值</option>
+                            <option value="max">最大值</option>
+                            <option value="min">最小值</option>
+                            <option value="avg">平均值</option>
+                            <option value="sum">求和</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">比较条件</label>
+                        <select class="form-select" id="alertCondition">
+                            <option value="greater_than">大于 ></option>
+                            <option value="less_than">小于 <</option>
+                            <option value="greater_than_or_equal">大于等于 ≥</option>
+                            <option value="less_than_or_equal">小于等于 ≤</option>
+                            <option value="equal">等于 =</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">阈值</label>
+                        <input type="number" class="form-control" id="alertThreshold" placeholder="100">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">检查间隔</label>
+                        <select class="form-select" id="alertInterval">
+                            <option value="1">每1分钟</option>
+                            <option value="5" selected>每5分钟</option>
+                            <option value="15">每15分钟</option>
+                            <option value="30">每30分钟</option>
+                            <option value="60">每1小时</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">冷却时间</label>
+                        <select class="form-select" id="alertCooldown">
+                            <option value="5">5分钟</option>
+                            <option value="15">15分钟</option>
+                            <option value="30" selected>30分钟</option>
+                            <option value="60">1小时</option>
+                            <option value="360">6小时</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">通知邮箱 (逗号分隔)</label>
+                    <input type="text" class="form-control" id="alertEmail" placeholder="user1@example.com, user2@example.com">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">企业微信 Webhook (逗号分隔)</label>
+                    <input type="text" class="form-control" id="alertWechat" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="alertEnabled" checked>
+                    <label class="form-check-label" for="alertEnabled">启用此规则</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="saveAlertRule()">保存告警规则</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.0.0/dist/gridstack-all.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/gridstack@10.0.0/dist/gridstack.min.css" rel="stylesheet">
+
+<script>
+const dashboardId = {{ dashboard.id }};
+let grid;
+let newChartType = null;
+const charts = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    grid = GridStack.init({
+        column: 12,
+        cellHeight: '70px',
+        minRow: 4,
+        resizable: { handles: 'se, sw, e, w' },
+        alwaysShowResizeHandle: true
+    });
+    
+    grid.on('change', function(event, items) {
+        console.log('Layout changed');
+    });
+    
+    initCharts();
+});
+
+async function initCharts() {
+    {% if dashboard.charts|length > 0 %}
+    try {
+        const res = await fetch('/' + dashboardId + '/charts-data');
+        const result = await res.json();
+        
+        if (result.success) {
+            for (const [chartId, data] of Object.entries(result.charts_data)) {
+                if (data.success) {
+                    renderChart(parseInt(chartId), data.data);
+                }
+            }
+        }
+    } catch (error) {
+        const chartIds = [
+            {% for chart in dashboard.charts %}{{ chart.id }}{% if not loop.last %}, {% endif %}{% endfor %}
+        ];
+        const promises = chartIds.map(id => loadChart(id));
+        await Promise.all(promises);
+    }
+    {% endif %}
+}
+
+async function loadChart(chartId) {
+    try {
+        const res = await fetch('/charts/' + chartId + '/data');
+        const result = await res.json();
+        if (result.success) {
+            renderChart(chartId, result.data);
+        }
+    } catch (error) {
+        console.error('Error loading chart', chartId, error);
+    }
+}
+
+function renderChart(chartId, data) {
+    const chartInfo = getChartInfo(chartId);
+    if (!chartInfo) return;
+    
+    const dom = document.getElementById('chart-' + chartId);
+    if (!dom) return;
+    
+    const myChart = echarts.init(dom);
+    charts[chartId] = myChart;
+    
+    const option = buildEChartOption(chartInfo, data);
+    myChart.setOption(option);
+    
+    window.addEventListener('resize', function() {
+        myChart.resize();
+    });
+}
+
+function getChartInfo(chartId) {
+    {% for chart in dashboard.charts %}
+    if ({{ chart.id }} === chartId) {
+        return {
+            id: {{ chart.id }},
+            type: '{{ chart.type }}',
+            xField: '{{ chart.x_field or '' }}',
+            yField: '{{ chart.y_field or '' }}',
+            categoryField: '{{ chart.category_field or '' }}',
+            valueField: '{{ chart.value_field or '' }}'
+        };
+    }
+    {% endfor %}
+    return null;
+}
+
+function buildEChartOption(chartInfo, data) {
+    if (!data || data.length === 0) {
+        return {
+            title: { text: '暂无数据', left: 'center', top: 'center' }
+        };
+    }
+    
+    switch (chartInfo.type) {
+        case 'bar':
+        case 'line':
+        case 'area':
+            const xData = data.map(d => d[chartInfo.xField] || d[Object.keys(d)[0]]);
+            const yData = data.map(d => parseFloat(d[chartInfo.yField] || d[Object.keys(d)[1]] || 0));
+            
+            return {
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: xData },
+                yAxis: { type: 'value' },
+                series: [{
+                    name: chartInfo.yField || '数值',
+                    type: chartInfo.type === 'area' ? 'line' : chartInfo.type,
+                    data: yData,
+                    areaStyle: chartInfo.type === 'area' ? {} : null
+                }]
+            };
+        
+        case 'pie':
+            const pieData = data.map(d => ({
+                name: d[chartInfo.categoryField] || d[Object.keys(d)[0]],
+                value: parseFloat(d[chartInfo.valueField] || d[Object.keys(d)[1]] || 0)
+            }));
+            
+            return {
+                tooltip: { trigger: 'item' },
+                legend: { orient: 'vertical', left: 'left' },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    data: pieData
+                }]
+            };
+        
+        case 'heatmap':
+            const heatX = [...new Set(data.map(d => d[chartInfo.xField]))];
+            const heatY = [...new Set(data.map(d => d[chartInfo.yField]))];
+            const heatData = data.map(d => [
+                heatX.indexOf(d[chartInfo.xField]),
+                heatY.indexOf(d[chartInfo.yField]),
+                parseFloat(d[chartInfo.valueField] || 0)
+            ]);
+            
+            return {
+                tooltip: { position: 'top' },
+                visualMap: { min: 0, max: 100, calculable: true, orient: 'horizontal', left: 'center' },
+                xAxis: { type: 'category', data: heatX },
+                yAxis: { type: 'category', data: heatY },
+                series: [{
+                    type: 'heatmap',
+                    data: heatData,
+                    label: { show: true },
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+                }]
+            };
+        
+        case 'scatter':
+            const scatterData = data.map(d => [
+                parseFloat(d[chartInfo.xField] || 0),
+                parseFloat(d[chartInfo.yField] || 0)
+            ]);
+            
+            return {
+                tooltip: { trigger: 'item' },
+                xAxis: { type: 'value' },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'scatter',
+                    data: scatterData
+                }]
+            };
+        
+        default:
+            return {
+                title: { text: '未支持的图表类型', left: 'center', top: 'center' }
+            };
+    }
+}
+
+function showWidgetPanel() {
+    document.getElementById('widgetPanel').style.display = 'block';
+    document.getElementById('chartConfigPanel').style.display = 'none';
+}
+
+function hideWidgetPanel() {
+    document.getElementById('widgetPanel').style.display = 'none';
+}
+
+async function addChart(type) {
+    newChartType = type;
+    hideWidgetPanel();
+    
+    const name = prompt('请输入图表名称:', '新' + getChartTypeName(type) + '图表');
+    if (!name) return;
+    
+    const res = await fetch('/' + dashboardId + '/charts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: name,
+            type: type
+        })
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+        addGridItem(result.id);
+    }
+}
+
+function getChartTypeName(type) {
+    const names = { bar: '柱状', line: '折线', pie: '饼', heatmap: '热力', scatter: '散点', area: '面积' };
+    return names[type] || '';
+}
+
+function addGridItem(chartId) {
+    const widget = document.createElement('div');
+    widget.className = 'grid-stack-item';
+    widget.setAttribute('gs-id', chartId);
+    widget.setAttribute('gs-w', '6');
+    widget.setAttribute('gs-h', '4');
+    widget.innerHTML = `
+        <div class="chart-card">
+            <div class="chart-header drag-handle">
+                <span>新图表</span>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editChart(${chartId})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteChart(${chartId})"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div id="chart-${chartId}" class="chart-container"></div>
+            </div>
+        </div>
+    `;
+    grid.addWidget(widget);
+    editChart(chartId);
+}
+
+function editChart(chartId) {
+    document.getElementById('widgetPanel').style.display = 'none';
+    document.getElementById('chartConfigPanel').style.display = 'block';
+    
+    {% for chart in dashboard.charts %}
+    if ({{ chart.id }} === chartId) {
+        document.getElementById('chartConfigTitle').textContent = '配置图表';
+        document.getElementById('editChartId').value = {{ chart.id }};
+        document.getElementById('chartName').value = '{{ chart.name }}';
+        document.getElementById('chartDataSource').value = '{{ chart.data_source_id or '' }}';
+        document.getElementById('chartQuery').value = '{{ chart.query_sql or '' }}';
+        document.getElementById('xField').value = '{{ chart.x_field or '' }}';
+        document.getElementById('yField').value = '{{ chart.y_field or '' }}';
+        document.getElementById('categoryField').value = '{{ chart.category_field or '' }}';
+        document.getElementById('valueField').value = '{{ chart.value_field or '' }}';
+        document.getElementById('chartRefresh').value = '{{ chart.refresh_interval or 0 }}';
+        return;
+    }
+    {% endfor %}
+    
+    document.getElementById('chartConfigTitle').textContent = '配置图表';
+    document.getElementById('editChartId').value = chartId;
+    document.getElementById('chartName').value = '';
+    document.getElementById('chartDataSource').value = '';
+    document.getElementById('chartQuery').value = '';
+    document.getElementById('xField').value = '';
+    document.getElementById('yField').value = '';
+    document.getElementById('categoryField').value = '';
+    document.getElementById('valueField').value = '';
+    document.getElementById('chartRefresh').value = '0';
+}
+
+function hideChartConfig() {
+    document.getElementById('chartConfigPanel').style.display = 'none';
+}
+
+async function testQuery() {
+    const dsId = document.getElementById('chartDataSource').value;
+    const query = document.getElementById('chartQuery').value;
+    
+    if (!dsId) {
+        alert('请先选择数据源');
+        return;
+    }
+    
+    const res = await fetch('/data-source/' + dsId + '/query', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ query: query })
+    });
+    
+    const result = await res.json();
+    const preview = document.getElementById('queryPreview');
+    
+    if (result.success) {
+        preview.innerHTML = `<div class="text-success mb-2">查询成功，返回 ${result.data.length} 条数据</div>
+            <pre>${JSON.stringify(result.data.slice(0, 5), null, 2)}</pre>`;
+    } else {
+        preview.innerHTML = `<div class="text-danger">${result.message}</div>`;
+    }
+}
+
+async function saveChartConfig() {
+    const chartId = document.getElementById('editChartId').value;
+    const data = {
+        name: document.getElementById('chartName').value,
+        data_source_id: parseInt(document.getElementById('chartDataSource').value) || null,
+        query_sql: document.getElementById('chartQuery').value,
+        x_field: document.getElementById('xField').value,
+        y_field: document.getElementById('yField').value,
+        category_field: document.getElementById('categoryField').value,
+        value_field: document.getElementById('valueField').value,
+        refresh_interval: parseInt(document.getElementById('chartRefresh').value)
+    };
+    
+    const res = await fetch('/charts/' + chartId, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+        alert('保存成功');
+        loadChart(chartId);
+        location.reload();
+    } else {
+        alert(result.message);
+    }
+}
+
+async function deleteChart(chartId) {
+    if (!confirm('确定要删除这个图表吗？')) return;
+    
+    const res = await fetch('/charts/' + chartId, {method: 'DELETE'});
+    const result = await res.json();
+    if (result.success) {
+        const el = document.querySelector(`[gs-id="${chartId}"]`);
+        if (el) grid.removeWidget(el);
+    }
+}
+
+async function saveDashboard() {
+    const layoutData = [];
+    grid.engine.nodes.forEach(n => {
+        layoutData.push({
+            id: parseInt(n.id),
+            x: n.x,
+            y: n.y,
+            w: n.w,
+            h: n.h
+        });
+    });
+    
+    const name = document.getElementById('dashboardName').value;
+    
+    await fetch('/' + dashboardId, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: name })
+    });
+    
+    const res = await fetch('/' + dashboardId + '/save-layout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ charts: layoutData })
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+        alert('保存成功');
+    }
+}
+</script>
+{% endblock %}

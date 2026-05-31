@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ dashboard.name }} - 数据看板</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; min-height: 100vh; }
+        .share-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .view-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 15px;
+        }
+        .view-chart {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 280px;
+        }
+        .chart-container { height: 300px; }
+        .chart-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+        .chart-body { flex: 1; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="share-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>{{ dashboard.name }}</h3>
+                    <small class="opacity-75">{{ dashboard.description or '' }}</small>
+                </div>
+                <div class="text-end">
+                    <small class="d-block opacity-75">有效期至</small>
+                    <span>{{ share.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% if dashboard.charts %}
+        <div class="view-grid" id="viewGrid">
+            {% for chart in dashboard.charts %}
+            <div class="view-chart" style="grid-column: span {{ chart.width }}; grid-row: span {{ chart.height }};">
+                <div class="chart-header">
+                    <span><i class="bi bi-bar-chart me-1"></i>{{ chart.name }}</span>
+                </div>
+                <div class="chart-body">
+                    <div id="chart-{{ chart.id }}" class="chart-container"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-layout-text-window display-1 text-muted"></i>
+            <p class="mt-3 text-muted">此看板暂无图表</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        const dashboardId = {{ dashboard.id }};
+        const token = '{{ share.token }}';
+        const charts = {};
+        const chartConfigs = {};
+        
+        {% for chart in dashboard.charts %}
+        chartConfigs[{{ chart.id }}] = {
+            id: {{ chart.id }},
+            type: '{{ chart.type }}',
+            xField: '{{ chart.x_field or '' }}',
+            yField: '{{ chart.y_field or '' }}',
+            categoryField: '{{ chart.category_field or '' }}',
+            valueField: '{{ chart.value_field or '' }}'
+        };
+        {% endfor %}
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllCharts();
+        });
+        
+        async function loadAllCharts() {
+            try {
+                const res = await fetch('/share/' + dashboardId + '/charts-data?token=' + token);
+                const result = await res.json();
+                
+                if (result.success) {
+                    for (const [chartId, data] of Object.entries(result.charts_data)) {
+                        if (data.success) {
+                            renderChart(parseInt(chartId), data.data);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading charts:', error);
+            }
+        }
+        
+        function renderChart(chartId, data) {
+            const config = chartConfigs[chartId];
+            const dom = document.getElementById('chart-' + chartId);
+            if (!dom) return;
+            
+            const myChart = echarts.init(dom);
+            charts[chartId] = myChart;
+            
+            const option = buildEChartOption(config, data);
+            myChart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+        
+        function buildEChartOption(config, data) {
+            if (!data || data.length === 0) {
+                return {
+                    title: { text: '暂无数据', left: 'center', top: 'center' }
+                };
+            }
+            
+            switch (config.type) {
+                case 'bar':
+                case 'line':
+                case 'area':
+                    const xData = data.map(d => d[config.xField] || d[Object.keys(d)[0]]);
+                    const yData = data.map(d => parseFloat(d[config.yField] || d[Object.keys(d)[1]] || 0));
+                    
+                    return {
+                        tooltip: { trigger: 'axis' },
+                        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                        xAxis: { type: 'category', data: xData, axisLabel: { rotate: 30 } },
+                        yAxis: { type: 'value' },
+                        series: [{
+                            name: config.yField || '数值',
+                            type: config.type === 'area' ? 'line' : config.type,
+                            data: yData,
+                            areaStyle: config.type === 'area' ? { opacity: 0.3 } : null,
+                            smooth: config.type === 'line' || config.type === 'area'
+                        }]
+                    };
+                
+                case 'pie':
+                    const pieData = data.map(d => ({
+                        name: d[config.categoryField] || d[Object.keys(d)[0]],
+                        value: parseFloat(d[config.valueField] || d[Object.keys(d)[1]] || 0)
+                    }));
+                    
+                    return {
+                        tooltip: { trigger: 'item' },
+                        legend: { orient: 'vertical', left: 'left', top: 'center' },
+                        series: [{
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            center: ['60%', '50%'],
+                            data: pieData
+                        }]
+                    };
+                
+                case 'heatmap':
+                    const heatX = [...new Set(data.map(d => d[config.xField]))];
+                    const heatY = [...new Set(data.map(d => d[config.yField]))];
+                    const heatData = data.map(d => [
+                        heatX.indexOf(d[config.xField]),
+                        heatY.indexOf(d[config.yField]),
+                        parseFloat(d[config.valueField] || 0)
+                    ]);
+                    
+                    const maxVal = Math.max(...heatData.map(d => d[2]));
+                    
+                    return {
+                        tooltip: { position: 'top' },
+                        visualMap: { min: 0, max: maxVal || 100, calculable: true, orient: 'horizontal', left: 'center', bottom: 0 },
+                        grid: { left: '10%', right: '10%', top: '10%', bottom: '20%' },
+                        xAxis: { type: 'category', data: heatX, splitArea: { show: true } },
+                        yAxis: { type: 'category', data: heatY, splitArea: { show: true } },
+                        series: [{ type: 'heatmap', data: heatData, label: { show: true } }]
+                    };
+                
+                case 'scatter':
+                    const scatterData = data.map(d => [
+                        parseFloat(d[config.xField] || 0),
+                        parseFloat(d[config.yField] || 0)
+                    ]);
+                    
+                    return {
+                        tooltip: { trigger: 'item' },
+                        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                        xAxis: { type: 'value' },
+                        yAxis: { type: 'value' },
+                        series: [{ type: 'scatter', data: scatterData, symbolSize: 10 }]
+                    };
+                
+                default:
+                    return { title: { text: '未支持的图表类型', left: 'center', top: 'center' } };
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+
+{% block title %}数据源管理{% endblock %}
+{% block page_title %}数据源管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">数据源列表</h4>
+    <button class="btn btn-primary" onclick="showCreateModal()">
+        <i class="bi bi-plus-circle me-1"></i>添加数据源
+    </button>
+</div>
+
+{% if data_sources %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>类型</th>
+                <th>连接信息</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ds in data_sources %}
+            <tr>
+                <td>{{ ds.name }}</td>
+                <td>
+                    {% if ds.type == 'mysql' %}
+                    <span class="badge bg-primary">MySQL</span>
+                    {% elif ds.type == 'postgresql' %}
+                    <span class="badge bg-success">PostgreSQL</span>
+                    {% elif ds.type == 'csv' %}
+                    <span class="badge bg-warning">CSV</span>
+                    {% elif ds.type == 'api' %}
+                    <span class="badge bg-info">API</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if ds.type in ['mysql', 'postgresql'] %}
+                    {{ ds.host }}:{{ ds.port }}/{{ ds.database }}
+                    {% elif ds.type == 'csv' %}
+                    {{ ds.file_path }}
+                    {% elif ds.type == 'api' %}
+                    {{ ds.api_url }}
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="testConnection({{ ds.id }})">
+                        <i class="bi bi-play-circle"></i> 测试
+                    </button>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editSource({{ ds.id }})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSource({{ ds.id }})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-database display-1 text-muted"></i>
+    <p class="mt-3 text-muted">暂无数据源</p>
+    <button class="btn btn-primary mt-2" onclick="showCreateModal()">添加第一个数据源</button>
+</div>
+{% endif %}
+
+<div class="modal fade" id="sourceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">添加数据源</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editSourceId">
+                <div class="mb-3">
+                    <label class="form-label">类型</label>
+                    <select class="form-select" id="sourceType" onchange="toggleSourceFields()">
+                        <option value="mysql">MySQL</option>
+                        <option value="postgresql">PostgreSQL</option>
+                        <option value="csv">CSV 文件</option>
+                        <option value="api">API 接口</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">名称</label>
+                    <input type="text" class="form-control" id="sourceName">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">描述</label>
+                    <textarea class="form-control" id="sourceDesc" rows="2"></textarea>
+                </div>
+                
+                <div id="dbFields">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">主机</label>
+                            <input type="text" class="form-control" id="dbHost" placeholder="localhost">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">端口</label>
+                            <input type="number" class="form-control" id="dbPort" placeholder="3306">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">数据库</label>
+                        <input type="text" class="form-control" id="dbDatabase">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="dbUsername">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-control" id="dbPassword">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="csvFields" style="display:none">
+                    <div class="mb-3">
+                        <label class="form-label">上传 CSV 文件</label>
+                        <input type="file" class="form-control" id="csvFile" accept=".csv">
+                        <input type="hidden" id="csvFilePath">
+                    </div>
+                </div>
+                
+                <div id="apiFields" style="display:none">
+                    <div class="mb-3">
+                        <label class="form-label">API URL</label>
+                        <input type="text" class="form-control" id="apiUrl">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">请求方法</label>
+                        <select class="form-select" id="apiMethod">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Headers (JSON格式)</label>
+                        <textarea class="form-control" id="apiHeaders" rows="2" placeholder='{"Authorization": "Bearer xxx"}'></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">请求体 (JSON格式)</label>
+                        <textarea class="form-control" id="apiBody" rows="2" placeholder='{"key": "value"}'></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveSource()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSourceFields() {
+    const type = document.getElementById('sourceType').value;
+    document.getElementById('dbFields').style.display = (type === 'mysql' || type === 'postgresql') ? 'block' : 'none';
+    document.getElementById('csvFields').style.display = (type === 'csv') ? 'block' : 'none';
+    document.getElementById('apiFields').style.display = (type === 'api') ? 'block' : 'none';
+    
+    if (type === 'mysql') document.getElementById('dbPort').placeholder = '3306';
+    if (type === 'postgresql') document.getElementById('dbPort').placeholder = '5432';
+}
+
+function showCreateModal() {
+    document.getElementById('modalTitle').textContent = '添加数据源';
+    document.getElementById('editSourceId').value = '';
+    document.getElementById('sourceType').value = 'mysql';
+    document.getElementById('sourceName').value = '';
+    document.getElementById('sourceDesc').value = '';
+    document.getElementById('dbHost').value = '';
+    document.getElementById('dbPort').value = '';
+    document.getElementById('dbDatabase').value = '';
+    document.getElementById('dbUsername').value = '';
+    document.getElementById('dbPassword').value = '';
+    document.getElementById('apiUrl').value = '';
+    document.getElementById('apiMethod').value = 'GET';
+    document.getElementById('apiHeaders').value = '';
+    document.getElementById('apiBody').value = '';
+    toggleSourceFields();
+    new bootstrap.Modal(document.getElementById('sourceModal')).show();
+}
+
+async function editSource(id) {
+    const res = await fetch('/data-source/' + id);
+    const ds = await res.json();
+    
+    document.getElementById('modalTitle').textContent = '编辑数据源';
+    document.getElementById('editSourceId').value = id;
+    document.getElementById('sourceType').value = ds.type;
+    document.getElementById('sourceName').value = ds.name;
+    document.getElementById('sourceDesc').value = ds.description || '';
+    document.getElementById('dbHost').value = ds.host || '';
+    document.getElementById('dbPort').value = ds.port || '';
+    document.getElementById('dbDatabase').value = ds.database || '';
+    document.getElementById('dbUsername').value = ds.username || '';
+    document.getElementById('dbPassword').value = '';
+    document.getElementById('apiUrl').value = ds.api_url || '';
+    document.getElementById('apiMethod').value = ds.api_method || 'GET';
+    document.getElementById('apiHeaders').value = ds.api_headers || '';
+    document.getElementById('apiBody').value = ds.api_body || '';
+    document.getElementById('csvFilePath').value = ds.file_path || '';
+    toggleSourceFields();
+    new bootstrap.Modal(document.getElementById('sourceModal')).show();
+}
+
+async function saveSource() {
+    const type = document.getElementById('sourceType').value;
+    const editId = document.getElementById('editSourceId').value;
+    
+    let data = {
+        type: type,
+        name: document.getElementById('sourceName').value,
+        description: document.getElementById('sourceDesc').value
+    };
+    
+    if (type === 'mysql' || type === 'postgresql') {
+        data.host = document.getElementById('dbHost').value;
+        data.port = parseInt(document.getElementById('dbPort').value) || null;
+        data.database = document.getElementById('dbDatabase').value;
+        data.username = document.getElementById('dbUsername').value;
+        data.password = document.getElementById('dbPassword').value;
+    } else if (type === 'csv') {
+        data.file_path = document.getElementById('csvFilePath').value;
+    } else if (type === 'api') {
+        data.api_url = document.getElementById('apiUrl').value;
+        data.api_method = document.getElementById('apiMethod').value;
+        data.api_headers = document.getElementById('apiHeaders').value;
+        data.api_body = document.getElementById('apiBody').value;
+    }
+    
+    const url = editId ? '/data-source/' + editId : '/data-source/create';
+    const method = editId ? 'PUT' : 'POST';
+    
+    const res = await fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+        location.reload();
+    } else {
+        alert(result.message);
+    }
+}
+
+async function testConnection(id) {
+    const res = await fetch('/data-source/' + id + '/test');
+    const result = await res.json();
+    alert(result.message);
+}
+
+async function deleteSource(id) {
+    if (!confirm('确定要删除这个数据源吗？')) return;
+    
+    const res = await fetch('/data-source/' + id, {method: 'DELETE'});
+    const result = await res.json();
+    if (result.success) {
+        location.reload();
+    } else {
+        alert(result.message);
+    }
+}
+
+document.getElementById('csvFile').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch('/data-source/upload-csv', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await res.json();
+    if (result.success) {
+        document.getElementById('csvFilePath').value = result.file_path;
+    } else {
+        alert(result.message);
+    }
+});
+</script>
+{% endblock %}
