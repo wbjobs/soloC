@@ -1,0 +1,15 @@
+{
+  "name": "cave-explorer",
+  "version": "1.0.0",
+  "description": "Cellular automata cave map generator with auto battle simulation",
+  "main": "src/index.js",
+  "bin": {
+    "cave-explorer": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": ["cellular-automata", "game", "roguelike", "astar"],
+  "author": "",
+  "license": "MIT"
+}
