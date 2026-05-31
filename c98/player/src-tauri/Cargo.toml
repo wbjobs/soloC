@@ -1,0 +1,24 @@
+[package]
+name = "termrec-player"
+version = "0.1.0"
+description = "终端会话录制回放客户端"
+authors = ["you@example.com"]
+license = ""
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.5", features = ["dialog-open", "fs-read-file", "shell-open"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+flate2 = "1.0"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+base64 = "0.21"
+anyhow = "1.0"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
