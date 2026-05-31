@@ -1,0 +1,107 @@
+[
+  {
+    "id": "9c2d4ee6-bf46-4be0-8788-49082085cea6",
+    "timestamp": "2026-05-11T20:04:41.235648",
+    "conversation_id": "conv_test_0",
+    "question": "测试问题 1",
+    "answer": "测试回答 1 [1]",
+    "sources_used": [
+      {
+        "doc_id": "doc0",
+        "filename": "test0.pdf",
+        "score": 0.85
+      }
+    ],
+    "retrieval_time_ms": 100.0,
+    "llm_time_ms": 500.0,
+    "total_time_ms": 650.0,
+    "source_documents": [
+      "test0.pdf"
+    ],
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "id": "678a7661-59de-4102-afdb-f634c9b75f13",
+    "timestamp": "2026-05-11T20:04:41.235648",
+    "conversation_id": "conv_test_1",
+    "question": "测试问题 2",
+    "answer": "测试回答 2 [1]",
+    "sources_used": [
+      {
+        "doc_id": "doc1",
+        "filename": "test1.pdf",
+        "score": 0.85
+      }
+    ],
+    "retrieval_time_ms": 110.0,
+    "llm_time_ms": 550.0,
+    "total_time_ms": 710.0,
+    "source_documents": [
+      "test1.pdf"
+    ],
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "id": "235be687-17c5-477f-8b63-14e0c2c96794",
+    "timestamp": "2026-05-11T20:04:41.235648",
+    "conversation_id": "conv_test_0",
+    "question": "测试问题 3",
+    "answer": "测试回答 3 [1]",
+    "sources_used": [
+      {
+        "doc_id": "doc2",
+        "filename": "test2.pdf",
+        "score": 0.85
+      }
+    ],
+    "retrieval_time_ms": 120.0,
+    "llm_time_ms": 600.0,
+    "total_time_ms": 770.0,
+    "source_documents": [
+      "test2.pdf"
+    ],
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "id": "83d8777b-56c3-4318-9e3a-37e9126a9086",
+    "timestamp": "2026-05-11T20:04:41.235648",
+    "conversation_id": "conv_test_1",
+    "question": "测试问题 4",
+    "answer": "测试回答 4 [1]",
+    "sources_used": [
+      {
+        "doc_id": "doc3",
+        "filename": "test3.pdf",
+        "score": 0.85
+      }
+    ],
+    "retrieval_time_ms": 130.0,
+    "llm_time_ms": 650.0,
+    "total_time_ms": 830.0,
+    "source_documents": [
+      "test0.pdf"
+    ],
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "id": "a5126328-79b1-4b82-bc26-89ebcfd00ba6",
+    "timestamp": "2026-05-11T20:04:41.235648",
+    "conversation_id": "conv_test_0",
+    "question": "测试问题 5",
+    "answer": "测试回答 5 [1]",
+    "sources_used": [
+      {
+        "doc_id": "doc4",
+        "filename": "test4.pdf",
+        "score": 0.85
+      }
+    ],
+    "retrieval_time_ms": 140.0,
+    "llm_time_ms": 700.0,
+    "total_time_ms": 890.0,
+    "source_documents": [
+      "test1.pdf"
+    ],
+    "user_ip": "127.0.0.1"
+  }
+]

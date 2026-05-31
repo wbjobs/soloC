@@ -1,0 +1,15 @@
+{
+  "id": "61f2415c-65c8-4fff-9f1d-674a29e5d331",
+  "messages": [
+    {
+      "role": "user",
+      "content": "你好"
+    },
+    {
+      "role": "assistant",
+      "content": "你好！有什么可以帮助你的？"
+    }
+  ],
+  "created_at": "2026-05-11T19:47:05.484767",
+  "updated_at": "2026-05-11T19:47:05.485768"
+}
