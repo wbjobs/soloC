@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPH 流体力学模拟器</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 100;
+            min-width: 220px;
+        }
+        #info h3 {
+            margin: 0 0 10px 0;
+            color: #00d4ff;
+        }
+        #info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 100;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 100;
+            min-width: 250px;
+        }
+        #controls h4 {
+            margin: 0 0 10px 0;
+            color: #00d4ff;
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        .control-group select,
+        .control-group button {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(0, 212, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .control-group select:hover,
+        .control-group button:hover {
+            background: rgba(0, 212, 255, 0.5);
+        }
+        .control-group select option {
+            background: #1a1a2e;
+            color: white;
+        }
+        #colorbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .color-gradient {
+            width: 200px;
+            height: 20px;
+            border-radius: 10px;
+        }
+        .color-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 200px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">加载中...</div>
+    <div id="info">
+        <h3>SPH 流体模拟器</h3>
+        <p>点击鼠标添加粒子</p>
+        <p id="particle-count">粒子数量: 0</p>
+        <p id="fps">FPS: 0</p>
+    </div>
+    <div id="controls">
+        <h4>控制面板</h4>
+        <div class="control-group">
+            <label>颜色映射模式:</label>
+            <select id="color-mode">
+                <option value="fixed">固定蓝色</option>
+                <option value="density">密度映射</option>
+                <option value="velocity">速度映射</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>粒子大小:</label>
+            <select id="particle-size">
+                <option value="5">小 (5)</option>
+                <option value="8" selected>中 (8)</option>
+                <option value="12">大 (12)</option>
+                <option value="18">特大 (18)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <button id="export-vtk">导出 VTK 文件</button>
+        </div>
+        <div class="control-group">
+            <button id="pause-sim">暂停模拟</button>
+        </div>
+    </div>
+    <div id="colorbar" style="display: none;">
+        <div>
+            <div class="color-gradient" id="color-gradient"></div>
+            <div class="color-labels">
+                <span id="color-min">低</span>
+                <span id="color-max">高</span>
+            </div>
+        </div>
+        <span id="color-mode-label">密度</span>
+    </div>
+    <div id="canvas-container"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
