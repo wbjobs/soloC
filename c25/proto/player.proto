@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package player;
+
+option go_package = "cardgame/proto/player";
+
+service PlayerService {
+  rpc CreatePlayer(CreatePlayerRequest) returns (CreatePlayerResponse);
+  rpc GetPlayerInfo(GetPlayerInfoRequest) returns (GetPlayerInfoResponse);
+  rpc UpdatePlayerInfo(UpdatePlayerInfoRequest) returns (UpdatePlayerInfoResponse);
+  rpc GetPlayerStats(GetPlayerStatsRequest) returns (GetPlayerStatsResponse);
+  rpc GetCardCollection(GetCardCollectionRequest) returns (GetCardCollectionResponse);
+  rpc AddCardToCollection(AddCardToCollectionRequest) returns (AddCardToCollectionResponse);
+  rpc UpdatePlayerStats(UpdatePlayerStatsRequest) returns (UpdatePlayerStatsResponse);
+}
+
+message CreatePlayerRequest {
+  string username = 1;
+  string avatar = 2;
+}
+
+message CreatePlayerResponse {
+  bool success = 1;
+  Player player = 2;
+}
+
+message Player {
+  string player_id = 1;
+  string username = 2;
+  string avatar = 3;
+  int64 created_at = 4;
+  int64 last_online = 5;
+}
+
+message PlayerStats {
+  string player_id = 1;
+  int32 total_games = 2;
+  int32 wins = 3;
+  int32 losses = 4;
+  int32 rank_score = 5;
+}
+
+message Card {
+  string card_id = 1;
+  string name = 2;
+  int32 attack = 3;
+  int32 defense = 4;
+  string rarity = 5;
+  string description = 6;
+  int32 level = 7;
+}
+
+message GetPlayerInfoRequest {
+  string player_id = 1;
+}
+
+message GetPlayerInfoResponse {
+  Player player = 1;
+}
+
+message UpdatePlayerInfoRequest {
+  string player_id = 1;
+  string username = 2;
+  string avatar = 3;
+}
+
+message UpdatePlayerInfoResponse {
+  bool success = 1;
+}
+
+message GetPlayerStatsRequest {
+  string player_id = 1;
+}
+
+message GetPlayerStatsResponse {
+  PlayerStats stats = 1;
+}
+
+message GetCardCollectionRequest {
+  string player_id = 1;
+}
+
+message GetCardCollectionResponse {
+  repeated Card cards = 1;
+}
+
+message AddCardToCollectionRequest {
+  string player_id = 1;
+  string card_id = 2;
+}
+
+message AddCardToCollectionResponse {
+  bool success = 1;
+  Card card = 2;
+}
+
+message UpdatePlayerStatsRequest {
+  string player_id = 1;
+  bool won = 2;
+  int32 rank_change = 3;
+}
+
+message UpdatePlayerStatsResponse {
+  bool success = 1;
+  PlayerStats stats = 2;
+}

@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+package game;
+
+option go_package = "cardgame/proto/game";
+
+service GameService {
+  rpc StartGame(StartGameRequest) returns (StartGameResponse);
+  rpc PlayCard(PlayCardRequest) returns (PlayCardResponse);
+  rpc GetGameState(GetGameStateRequest) returns (GetGameStateResponse);
+  rpc SurrenderGame(SurrenderGameRequest) returns (SurrenderGameResponse);
+  rpc EndTurn(EndTurnRequest) returns (EndTurnResponse);
+  rpc GetGameReplay(GetGameReplayRequest) returns (GetGameReplayResponse);
+  rpc GetPlayerGameHistory(GetPlayerGameHistoryRequest) returns (GetPlayerGameHistoryResponse);
+}
+
+enum OperationType {
+  OP_START_GAME = 0;
+  OP_PLAY_CARD = 1;
+  OP_END_TURN = 2;
+  OP_SURRENDER = 3;
+  OP_CARD_DEAL = 4;
+  OP_GAME_END = 5;
+}
+
+message GameOperation {
+  string operation_id = 1;
+  OperationType operation_type = 2;
+  string player_id = 3;
+  int64 timestamp = 4;
+  int32 turn_number = 5;
+  string game_state_snapshot = 6;
+  string payload = 7;
+}
+
+message GameReplay {
+  string game_id = 1;
+  string room_id = 2;
+  repeated string player_ids = 3;
+  repeated string player_names = 4;
+  int64 start_time = 5;
+  int64 end_time = 6;
+  string winner_id = 7;
+  repeated GameOperation operations = 8;
+}
+
+message GameHistoryEntry {
+  string game_id = 1;
+  string room_id = 2;
+  repeated string player_ids = 3;
+  int64 start_time = 4;
+  int64 end_time = 5;
+  string winner_id = 6;
+  bool won = 7;
+  int32 rank_change = 8;
+}
+
+message GetGameReplayRequest {
+  string game_id = 1;
+  string player_id = 2;
+}
+
+message GetGameReplayResponse {
+  bool success = 1;
+  GameReplay replay = 2;
+  string message = 3;
+}
+
+message GetPlayerGameHistoryRequest {
+  string player_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetPlayerGameHistoryResponse {
+  bool success = 1;
+  repeated GameHistoryEntry history = 2;
+  int32 total = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+enum GamePhase {
+  DEAL = 0;
+  PLAY = 1;
+  CALCULATE = 2;
+  END = 3;
+}
+
+enum CardType {
+  ATTACK = 0;
+  DEFENSE = 1;
+  MAGIC = 2;
+  SPECIAL = 3;
+}
+
+message GameCard {
+  string card_id = 1;
+  string instance_id = 2;
+  string name = 3;
+  int32 attack = 4;
+  int32 defense = 5;
+  string rarity = 6;
+  CardType card_type = 7;
+  string description = 8;
+  int32 level = 9;
+}
+
+message PlayerHand {
+  string player_id = 1;
+  repeated GameCard cards = 2;
+}
+
+message PlayerField {
+  string player_id = 1;
+  repeated GameCard cards = 2;
+}
+
+message GameState {
+  string game_id = 1;
+  string room_id = 2;
+  GamePhase phase = 3;
+  int32 current_turn = 4;
+  string current_player_id = 5;
+  repeated string player_ids = 6;
+  map<string, PlayerHand> player_hands = 7;
+  map<string, PlayerField> player_fields = 8;
+  map<string, int32> player_scores = 9;
+  int32 max_turns = 10;
+  string winner_id = 11;
+  int64 start_time = 12;
+  int64 end_time = 13;
+}
+
+message StartGameRequest {
+  string room_id = 1;
+  repeated string player_ids = 2;
+  int32 max_turns = 3;
+}
+
+message StartGameResponse {
+  bool success = 1;
+  GameState game_state = 2;
+  string message = 3;
+}
+
+message PlayCardRequest {
+  string game_id = 1;
+  string player_id = 2;
+  string card_instance_id = 3;
+  string target_player_id = 4;
+}
+
+message PlayCardResponse {
+  bool success = 1;
+  GameState game_state = 2;
+  string message = 3;
+}
+
+message GetGameStateRequest {
+  string game_id = 1;
+  string player_id = 2;
+}
+
+message GetGameStateResponse {
+  bool success = 1;
+  GameState game_state = 2;
+}
+
+message SurrenderGameRequest {
+  string game_id = 1;
+  string player_id = 2;
+}
+
+message SurrenderGameResponse {
+  bool success = 1;
+  string winner_id = 2;
+  string message = 3;
+}
+
+message EndTurnRequest {
+  string game_id = 1;
+  string player_id = 2;
+}
+
+message EndTurnResponse {
+  bool success = 1;
+  GameState game_state = 2;
+  string message = 3;
+}

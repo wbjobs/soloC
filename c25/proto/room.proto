@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package room;
+
+option go_package = "cardgame/proto/room";
+
+service RoomService {
+  rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse);
+  rpc JoinRoom(JoinRoomRequest) returns (JoinRoomResponse);
+  rpc LeaveRoom(LeaveRoomRequest) returns (LeaveRoomResponse);
+  rpc GetRoomInfo(GetRoomInfoRequest) returns (GetRoomInfoResponse);
+  rpc StartMatchmaking(StartMatchmakingRequest) returns (StartMatchmakingResponse);
+  rpc CancelMatchmaking(CancelMatchmakingRequest) returns (CancelMatchmakingResponse);
+  rpc GetRoomList(GetRoomListRequest) returns (GetRoomListResponse);
+}
+
+enum RoomStatus {
+  WAITING = 0;
+  PLAYING = 1;
+  FINISHED = 2;
+}
+
+message Room {
+  string room_id = 1;
+  string host_id = 2;
+  string host_name = 3;
+  repeated string player_ids = 4;
+  repeated string player_names = 5;
+  RoomStatus status = 6;
+  int32 max_players = 7;
+  string game_mode = 8;
+  int64 created_at = 9;
+}
+
+message CreateRoomRequest {
+  string player_id = 1;
+  string player_name = 2;
+  string game_mode = 3;
+  int32 max_players = 4;
+}
+
+message CreateRoomResponse {
+  bool success = 1;
+  Room room = 2;
+}
+
+message JoinRoomRequest {
+  string room_id = 1;
+  string player_id = 2;
+  string player_name = 3;
+}
+
+message JoinRoomResponse {
+  bool success = 1;
+  Room room = 2;
+  string message = 3;
+}
+
+message LeaveRoomRequest {
+  string room_id = 1;
+  string player_id = 2;
+}
+
+message LeaveRoomResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetRoomInfoRequest {
+  string room_id = 1;
+}
+
+message GetRoomInfoResponse {
+  Room room = 1;
+}
+
+message StartMatchmakingRequest {
+  string player_id = 1;
+  string player_name = 2;
+  string game_mode = 3;
+  int32 rank_score = 4;
+}
+
+message StartMatchmakingResponse {
+  bool success = 1;
+  string matchmaking_id = 2;
+  string message = 3;
+}
+
+message CancelMatchmakingRequest {
+  string player_id = 1;
+  string matchmaking_id = 2;
+}
+
+message CancelMatchmakingResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetRoomListRequest {
+  string game_mode = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetRoomListResponse {
+  repeated Room rooms = 1;
+  int32 total = 2;
+}
