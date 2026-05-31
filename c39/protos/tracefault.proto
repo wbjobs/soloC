@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package tracefault;
+
+service TraceFaultService {
+  rpc QueryTrace (TraceRequest) returns (TraceResponse) {}
+  rpc WatchFaults (WatchRequest) returns (WatchResponse) {}
+}
+
+message TraceRequest {
+  string time = 1;
+  string service = 2;
+}
+
+message LogEntry {
+  string trace_id = 1;
+  string span_id = 2;
+  string parent_span_id = 3;
+  string error_code = 4;
+  string service_name = 5;
+  int64 duration = 6;
+  string timestamp = 7;
+  string operation = 8;
+}
+
+message RootCause {
+  string span_id = 1;
+  string reason = 2;
+  string service_name = 3;
+  string error_code = 4;
+  int64 duration = 5;
+}
+
+message TraceResponse {
+  repeated LogEntry logs = 1;
+  string dot_graph = 2;
+  RootCause root_cause = 3;
+  string json_summary = 4;
+}
+
+message WatchRequest {
+  string service = 1;
+  int32 window_minutes = 2;
+  int32 threshold = 3;
+}
+
+message ErrorCount {
+  string error_code = 1;
+  string service_name = 2;
+  int32 count = 3;
+  double rate_per_minute = 4;
+  bool threshold_exceeded = 5;
+}
+
+message Alert {
+  string error_code = 1;
+  string service_name = 2;
+  string message = 3;
+  int32 current_count = 4;
+  int32 threshold = 5;
+  string timestamp = 6;
+}
+
+message WatchResponse {
+  repeated ErrorCount error_counts = 1;
+  repeated Alert alerts = 2;
+  string summary = 3;
+  string window_start = 4;
+  string window_end = 5;
+}

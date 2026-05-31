@@ -1,0 +1,25 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "trace-fault"
+version = "0.1.0"
+description = "Trace fault analysis CLI tool with gRPC and ClickHouse"
+authors = ["Your Name <your@email.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.7"
+grpcio = "^1.60.0"
+grpcio-tools = "^1.60.0"
+clickhouse-connect = "^0.6.23"
+protobuf = "^4.25.2"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.4"
+
+[tool.poetry.scripts]
+trace-fault = "trace_fault.cli:main"
+trace-fault-server = "trace_fault.server:main"
