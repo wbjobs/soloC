@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPGA神经网络加速器仿真平台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FPGA神经网络加速器仿真平台</h1>
+            <p class="subtitle">实时配置神经网络参数，模拟FPGA加速效果</p>
+        </header>
+
+        <div class="main-content">
+            <div class="config-section">
+                <div class="config-card">
+                    <h2>神经网络配置</h2>
+                    <div class="form-group">
+                        <label for="matrix_size">矩阵大小 (N x N)</label>
+                        <select id="matrix_size">
+                            <option value="4">4 x 4</option>
+                            <option value="8" selected>8 x 8</option>
+                            <option value="16">16 x 16</option>
+                            <option value="32">32 x 32</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="num_layers">网络层数</label>
+                        <input type="number" id="num_layers" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="batch_size">批大小</label>
+                        <input type="number" id="batch_size" value="1" min="1" max="64">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="use_relu" checked>
+                        <label for="use_relu">启用ReLU激活</label>
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <h2>FPGA硬件配置</h2>
+                    <div class="form-group">
+                        <label for="num_pe">处理单元数 (PE)</label>
+                        <select id="num_pe">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="4" selected>4</option>
+                            <option value="8">8</option>
+                            <option value="16">16</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="clock_freq">时钟频率 (MHz)</label>
+                        <input type="number" id="clock_freq" value="100" min="10" max="500">
+                    </div>
+                    <div class="form-group">
+                        <label for="data_width">数据位宽</label>
+                        <select id="data_width">
+                            <option value="8">8 bit</option>
+                            <option value="16" selected>16 bit</option>
+                            <option value="32">32 bit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-card optimization-config">
+                    <h2>自动优化</h2>
+                    <div class="form-group">
+                        <label for="optimization_target">优化目标</label>
+                        <select id="optimization_target">
+                            <option value="speedup" selected>最大加速比</option>
+                            <option value="throughput">最大吞吐量</option>
+                            <option value="power">最低功耗</option>
+                            <option value="energy">最低能量</option>
+                            <option value="efficiency">最佳能效比</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="optimize_pe" checked>
+                        <label for="optimize_pe">优化PE数量</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="optimize_freq" checked>
+                        <label for="optimize_freq">优化时钟频率</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="optimize_width">
+                        <label for="optimize_width">优化数据位宽</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-section">
+                <button id="run-simulation" class="btn btn-primary">运行仿真</button>
+                <button id="run-optimization" class="btn btn-success">自动优化</button>
+                <button id="run-comparison" class="btn btn-secondary">PE数量对比</button>
+                <button id="export-project" class="btn btn-export">导出FPGA项目</button>
+                <button id="load-history" class="btn btn-secondary">查看历史</button>
+            </div>
+
+            <div class="results-section">
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>正在执行仿真...</p>
+                </div>
+
+                <div id="results-container" class="hidden">
+                    <div class="results-grid">
+                        <div class="result-card highlight">
+                            <div class="result-label">加速比</div>
+                            <div class="result-value" id="speedup">0.00x</div>
+                            <div class="result-desc">FPGA vs CPU</div>
+                        </div>
+
+                        <div class="result-card">
+                            <div class="result-label">FPGA执行时间</div>
+                            <div class="result-value" id="fpga-time">0.00 ms</div>
+                        </div>
+
+                        <div class="result-card">
+                            <div class="result-label">CPU执行时间</div>
+                            <div class="result-value" id="cpu-time">0.00 ms</div>
+                        </div>
+
+                        <div class="result-card">
+                            <div class="result-label">FPGA时钟周期</div>
+                            <div class="result-value" id="fpga-cycles">0</div>
+                        </div>
+
+                        <div class="result-card power">
+                            <div class="result-label">功耗</div>
+                            <div class="result-value" id="power">0.00 mW</div>
+                        </div>
+
+                        <div class="result-card">
+                            <div class="result-label">能量消耗</div>
+                            <div class="result-value" id="energy">0.00 uJ</div>
+                        </div>
+
+                        <div class="result-card">
+                            <div class="result-label">吞吐量</div>
+                            <div class="result-value" id="throughput">0.00 MOPS</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3>性能对比</h3>
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>PE数量对比分析</h3>
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="history-container" class="hidden">
+                    <h3>仿真历史记录</h3>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>矩阵大小</th>
+                                <th>层数</th>
+                                <th>PE数</th>
+                                <th>加速比</th>
+                                <th>功耗(mW)</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>FPGA神经网络加速器仿真平台 | 基于Verilog + Python + Flask</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
