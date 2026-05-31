@@ -1,0 +1,15 @@
+{
+  "name": "performance-monitor",
+  "version": "1.0.0",
+  "description": "Chrome Extension Performance Monitor with Node.js Backend",
+  "scripts": {
+    "dev:extension": "cd extension && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build:extension": "cd extension && npm run build",
+    "build:server": "cd server && npm run build",
+    "install:all": "npm install && cd extension && npm install && cd ../server && npm install"
+  },
+  "keywords": ["chrome-extension", "performance", "monitoring"],
+  "author": "",
+  "license": "MIT"
+}
