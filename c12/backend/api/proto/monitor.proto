@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package monitor;
+
+option go_package = "api/gen/monitor";
+
+service MonitorService {
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  rpc UnregisterNode(UnregisterNodeRequest) returns (UnregisterNodeResponse);
+  rpc GetNodeStatus(GetNodeStatusRequest) returns (GetNodeStatusResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream MetricsData);
+}
+
+enum NodeType {
+  UNKNOWN = 0;
+  ETHEREUM = 1;
+  BITCOIN = 2;
+}
+
+enum NodeStatus {
+  OFFLINE = 0;
+  ONLINE = 1;
+  SYNCING = 2;
+  ERROR = 3;
+}
+
+message NodeInfo {
+  string id = 1;
+  NodeType type = 2;
+  string name = 3;
+  string endpoint = 4;
+  NodeStatus status = 5;
+  int64 block_height = 6;
+  float tx_rate = 7;
+  int64 last_checked = 8;
+}
+
+message MetricsData {
+  string node_id = 1;
+  int64 timestamp = 2;
+  int64 block_height = 3;
+  float tx_rate = 4;
+  int64 peer_count = 5;
+  float sync_progress = 6;
+  float latency_ms = 7;
+}
+
+message RegisterNodeRequest {
+  NodeType type = 1;
+  string name = 2;
+  string endpoint = 3;
+  string username = 4;
+  string password = 5;
+}
+
+message RegisterNodeResponse {
+  bool success = 1;
+  string node_id = 2;
+  string message = 3;
+}
+
+message UnregisterNodeRequest {
+  string node_id = 1;
+}
+
+message UnregisterNodeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetNodeStatusRequest {
+  string node_id = 1;
+}
+
+message GetNodeStatusResponse {
+  NodeInfo node = 1;
+}
+
+message ListNodesRequest {}
+
+message ListNodesResponse {
+  repeated NodeInfo nodes = 1;
+}
+
+message StreamMetricsRequest {
+  repeated string node_ids = 1;
+}
