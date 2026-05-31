@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:CityTrafficSim"
+        xmlns:ui="using:CityTrafficSim.UI"
+        x:Class="CityTrafficSim.MainWindow"
+        Title="城市交通模拟器"
+        Width="1200"
+        Height="800">
+    <Grid RowDefinitions="Auto,*">
+        <TextBlock Grid.Row="0" Text="拖拽鼠标查看城市不同区域" Padding="10" FontSize="16" FontWeight="Bold"/>
+        <ui:TrafficCanvas Grid.Row="1"/>
+    </Grid>
+</Window>
