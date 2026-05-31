@@ -1,0 +1,25 @@
+[package]
+name = "video-tracker-mosaic"
+version = "0.1.0"
+description = "视频目标追踪与马赛克处理桌面应用"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["shell-open"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+opencv = { version = "0.80", features = ["opencv-480"] }
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+ffmpeg-next = "6.1"
+image = "0.24"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
