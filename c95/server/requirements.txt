@@ -1,0 +1,9 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.5.3
+Flask-CORS==4.0.0
+bcrypt==4.0.1
+python-dotenv==1.0.0
+markdown==3.5
+pygments==2.16.1
+python-lsp-jsonrpc==1.1.2
