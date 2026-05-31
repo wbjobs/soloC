@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: player-behavior-analytics
+  datasource:
+    url: jdbc:postgresql://localhost:5432/game_analytics
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+analytics:
+  anomaly:
+    max-normal-speed: 15.0
+    speed-threshold-multiplier: 2.0
+    teleport-distance-threshold: 100.0
+    min-time-between-movements: 100
+  report:
+    output-path: ./reports
