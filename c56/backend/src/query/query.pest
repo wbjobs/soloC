@@ -1,0 +1,27 @@
+query = { aggregator_part? metric filter_list? time_range? step? }
+
+aggregator_part = { aggregator ~ "(" ~ metric? ~ ")" ~ ("by" ~ group_by_list)? }
+
+metric = @{ (ASCII_ALPHANUMERIC | "_" | ":")+ }
+
+filter_list = { "{" ~ filter ~ ("," ~ filter)* ~ "}" }
+
+filter = { label_name ~ filter_op ~ label_value }
+
+label_name = @{ (ASCII_ALPHANUMERIC | "_")+ }
+
+filter_op = { "=" | "!=" | "=~" | "!~" }
+
+label_value = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+aggregator = @{ "sum" | "avg" | "min" | "max" | "count" }
+
+group_by_list = { "(" ~ label_name ~ ("," ~ label_name)* ~ ")" }
+
+time_range = { "[" ~ time_value ~ (":" ~ time_value)? ~ "]" }
+
+time_value = @{ (ASCII_DIGIT)+ ~ ("s" | "m" | "h" | "d" | "w") }
+
+step = { "@" ~ time_value }
+
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }

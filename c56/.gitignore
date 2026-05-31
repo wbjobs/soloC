@@ -1,0 +1,13 @@
+# Rust
+/target
+Cargo.lock
+
+# Node
+node_modules
+build
+dist
+.env
+.DS_Store
+
+# Svelte
+.svelte-kit
