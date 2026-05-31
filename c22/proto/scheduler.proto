@@ -1,0 +1,187 @@
+syntax = "proto3";
+
+package scheduler;
+
+option go_package = "distributed-scheduler/proto";
+
+enum TaskType {
+  TASK_TYPE_UNKNOWN = 0;
+  TASK_TYPE_TIMED = 1;
+  TASK_TYPE_DELAYED = 2;
+  TASK_TYPE_IMMEDIATE = 3;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNKNOWN = 0;
+  TASK_STATUS_PENDING = 1;
+  TASK_STATUS_SCHEDULED = 2;
+  TASK_STATUS_RUNNING = 3;
+  TASK_STATUS_SUCCESS = 4;
+  TASK_STATUS_FAILED = 5;
+  TASK_STATUS_CANCELLED = 6;
+}
+
+enum ExecutorStatus {
+  EXECUTOR_STATUS_UNKNOWN = 0;
+  EXECUTOR_STATUS_ONLINE = 1;
+  EXECUTOR_STATUS_OFFLINE = 2;
+  EXECUTOR_STATUS_BUSY = 3;
+}
+
+message Task {
+  string id = 1;
+  string name = 2;
+  TaskType type = 3;
+  string cron_expression = 4;
+  int64 delay_seconds = 5;
+  string payload = 6;
+  int32 max_retry_count = 7;
+  int32 retry_interval_seconds = 8;
+  TaskStatus status = 9;
+  int32 retry_count = 10;
+  int64 created_at = 11;
+  int64 updated_at = 12;
+  int64 scheduled_at = 13;
+  string executor_id = 14;
+}
+
+message TaskLog {
+  string id = 1;
+  string task_id = 2;
+  string executor_id = 3;
+  TaskStatus status = 4;
+  string message = 5;
+  int64 started_at = 6;
+  int64 finished_at = 7;
+  int32 retry_count = 8;
+}
+
+message ExecutorInfo {
+  string id = 1;
+  string address = 2;
+  ExecutorStatus status = 3;
+  int32 max_concurrent_tasks = 4;
+  int32 current_tasks = 5;
+  repeated string supported_task_types = 6;
+  int64 last_heartbeat_at = 7;
+}
+
+message CreateTaskRequest {
+  string name = 1;
+  TaskType type = 2;
+  string cron_expression = 3;
+  int64 delay_seconds = 4;
+  string payload = 5;
+  int32 max_retry_count = 6;
+  int32 retry_interval_seconds = 7;
+}
+
+message CreateTaskResponse {
+  bool success = 1;
+  string message = 2;
+  Task task = 3;
+}
+
+message CancelTaskRequest {
+  string task_id = 1;
+}
+
+message CancelTaskResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetTaskRequest {
+  string task_id = 1;
+}
+
+message GetTaskResponse {
+  bool success = 1;
+  string message = 2;
+  Task task = 3;
+}
+
+message ListTasksRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  TaskStatus status = 3;
+}
+
+message ListTasksResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Task tasks = 3;
+  int32 total = 4;
+}
+
+message ExecuteTaskRequest {
+  Task task = 1;
+}
+
+message ExecuteTaskResponse {
+  bool success = 1;
+  string message = 2;
+  TaskStatus status = 3;
+}
+
+message ReportTaskStatusRequest {
+  string task_id = 1;
+  string executor_id = 2;
+  TaskStatus status = 3;
+  string message = 4;
+  int64 started_at = 5;
+  int64 finished_at = 6;
+}
+
+message ReportTaskStatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message RegisterExecutorRequest {
+  ExecutorInfo executor = 1;
+}
+
+message RegisterExecutorResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HeartbeatRequest {
+  string executor_id = 1;
+  ExecutorStatus status = 2;
+  int32 current_tasks = 3;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetTaskLogsRequest {
+  string task_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetTaskLogsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated TaskLog logs = 3;
+  int32 total = 4;
+}
+
+service SchedulerService {
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+  rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  rpc ReportTaskStatus(ReportTaskStatusRequest) returns (ReportTaskStatusResponse);
+  rpc RegisterExecutor(RegisterExecutorRequest) returns (RegisterExecutorResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc GetTaskLogs(GetTaskLogsRequest) returns (GetTaskLogsResponse);
+}
+
+service ExecutorService {
+  rpc ExecuteTask(ExecuteTaskRequest) returns (ExecuteTaskResponse);
+}

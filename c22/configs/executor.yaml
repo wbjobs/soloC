@@ -1,0 +1,35 @@
+scheduler:
+  grpc_port: 50051
+  rest_port: 8080
+  node_id: scheduler-1
+  heartbeat_ttl: 30
+
+executor:
+  grpc_port: 50052
+  node_id: executor-1
+  address: "localhost:50052"
+  max_concurrent_tasks: 10
+  supported_task_types:
+    - "TIMED"
+    - "DELAYED"
+    - "IMMEDIATE"
+  heartbeat_interval: 5
+
+etcd:
+  endpoints:
+    - "localhost:2379"
+  dial_timeout: 5
+  prefix: "/scheduler"
+
+mysql:
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: "password"
+  database: "scheduler"
+  max_open_conns: 100
+  max_idle_conns: 10
+
+logger:
+  level: "info"
+  format: "json"
