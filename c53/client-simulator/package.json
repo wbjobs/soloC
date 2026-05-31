@@ -1,0 +1,14 @@
+{
+  "name": "orderbook-client-simulator",
+  "version": "1.0.0",
+  "description": "High concurrency trading order simulator",
+  "main": "simulator.js",
+  "scripts": {
+    "start": "node simulator.js",
+    "stress": "node stress_test.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "uuid": "^9.0.0"
+  }
+}
