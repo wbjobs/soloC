@@ -1,0 +1,12 @@
+Django==4.2.11
+djangorestframework==3.15.1
+channels==4.1.0
+channels-redis==4.2.0
+mne==1.7.0
+numpy==1.26.4
+scipy==1.12.0
+matplotlib==3.8.4
+django-cors-headers==4.3.1
+redis==5.0.3
+psycopg2-binary==2.9.9
+Pillow==10.3.0
