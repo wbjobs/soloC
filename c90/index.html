@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synteny Analysis API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        input[type="file"]:hover {
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .summary-card .label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .visualization-container {
+            width: 100%;
+            min-height: 500px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: auto;
+        }
+        
+        .download-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .download-btn {
+            background: #28a745;
+            padding: 12px 25px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧬 Synteny Analysis Tool</h1>
+            <p class="subtitle">Gene Collinearity Analysis with Ancestral Karyotype Reconstruction</p>
+        </header>
+        
+        <div class="upload-section">
+            <h2 style="margin-bottom: 25px; color: #333;">Upload Files</h2>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <div class="form-group">
+                <label>Species 1 GFF3 File</label>
+                <input type="file" id="gff1" accept=".gff,.gff3">
+            </div>
+            
+            <div class="form-group">
+                <label>Species 2 GFF3 File</label>
+                <input type="file" id="gff2" accept=".gff,.gff3">
+            </div>
+            
+            <div class="form-group">
+                <label>BLAST Results File (tabular format)</label>
+                <input type="file" id="blast" accept=".txt,.tsv,.out">
+            </div>
+            
+            <button id="analyzeBtn" onclick="startAnalysis()">Start Analysis</button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing synteny... This may take a few minutes.</p>
+            </div>
+        </div>
+        
+        <div class="results-section" id="results">
+            <h2 style="margin-bottom: 25px; color: #333;">Analysis Results</h2>
+            
+            <div class="summary-grid" id="summaryGrid"></div>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('dotplot')">Dot Plot</div>
+                <div class="tab" onclick="switchTab('circos')">Circos Plot</div>
+                <div class="tab" onclick="switchTab('ancestor')">Ancestral Karyotype</div>
+                <div class="tab" onclick="switchTab('scaffold')">Scaffold Mapping</div>
+                <div class="tab" onclick="switchTab('ploidy')">Ploidy Detection</div>
+            </div>
+            
+            <div class="tab-content active" id="dotplot">
+                <div class="visualization-container" id="dotplotContainer"></div>
+            </div>
+            
+            <div class="tab-content" id="circos">
+                <div class="visualization-container" id="circosContainer"></div>
+            </div>
+            
+            <div class="tab-content" id="ancestor">
+                <div class="visualization-container" id="ancestorContainer"></div>
+            </div>
+            
+            <div class="tab-content" id="scaffold">
+                <div class="visualization-container" id="scaffoldContainer" style="height: auto; min-height: 400px; overflow-y: auto;">
+                    <div id="scaffoldMappingContent"></div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="ploidy">
+                <div class="visualization-container" id="ploidyContainer" style="height: auto; min-height: 600px; overflow-y: auto;">
+                    <div id="ploidyContent"></div>
+                </div>
+            </div>
+            
+            <div class="download-buttons">
+                <button class="download-btn" onclick="downloadPDF()">Download PDF Report</button>
+                <button class="download-btn" onclick="downloadScaffoldMapping()" style="background: #17a2b8;">Download Mapping CSV</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let analysisResults = null;
+        
+        async function startAnalysis() {
+            const gff1 = document.getElementById('gff1').files[0];
+            const gff2 = document.getElementById('gff2').files[0];
+            const blast = document.getElementById('blast').files[0];
+            
+            if (!gff1 || !gff2 || !blast) {
+                showError('Please upload all three files');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('gff1', gff1);
+            formData.append('gff2', gff2);
+            formData.append('blast', blast);
+            
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('errorMessage').classList.remove('active');
+            
+            try {
+                const response = await fetch('http://localhost:8000/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Analysis failed');
+                }
+                
+                analysisResults = await response.json();
+                displayResults(analysisResults);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+        
+        function displayResults(results) {
+            document.getElementById('results').classList.add('active');
+            
+            const summary = results.summary;
+            const summaryHtml = `
+                <div class="summary-card">
+                    <div class="number">${summary.species1_genes}</div>
+                    <div class="label">Species 1 Genes</div>
+                </div>
+                <div class="summary-card">
+                    <div class="number">${summary.species2_genes}</div>
+                    <div class="label">Species 2 Genes</div>
+                </div>
+                <div class="summary-card">
+                    <div class="number">${summary.syntenic_blocks}</div>
+                    <div class="label">Syntenic Blocks</div>
+                </div>
+                <div class="summary-card">
+                    <div class="number">${summary.ancestral_contigs}</div>
+                    <div class="label">Ancestral Contigs</div>
+                </div>
+            `;
+            
+            document.getElementById('summaryGrid').innerHTML = summaryHtml;
+            
+            document.getElementById('dotplotContainer').innerHTML = results.visualizations.dotplot;
+            document.getElementById('circosContainer').innerHTML = results.visualizations.circos;
+            document.getElementById('ancestorContainer').innerHTML = results.visualizations.ancestor_plot;
+            displayScaffoldMapping(results.scaffold_mapping);
+            displayPloidyResults(results.ploidy_detection);
+        }
+        
+        function displayScaffoldMapping(mapping) {
+            if (!mapping || mapping.length === 0) {
+                document.getElementById('scaffoldMappingContent').innerHTML = 
+                    '<p style="padding: 40px; text-align: center; color: #666;">No scaffold mapping available</p>';
+                return;
+            }
+            
+            let html = `
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 20px;">Scaffold to Chromosome Group Mapping</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: left;">Chromosome Group</th>
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: left;">Species 1 Scaffold</th>
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: left;">Species 2 Scaffold</th>
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: center;">Shared Genes</th>
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: center;">Score</th>
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: center;">Coverage Sp1</th>
+                                <th style="padding: 12px; border: 1px solid #dee2e6; text-align: center;">Coverage Sp2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            mapping.forEach(item => {
+                const bgColor = item.shared_genes > 0 ? '' : 'background: #fff3cd;';
+                html += `
+                    <tr style="${bgColor}">
+                        <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: 500;">${item.chromosome_group}</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6;">${item.scaffold_sp1}</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6;">${item.scaffold_sp2}</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${item.shared_genes}</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${(item.mapping_score * 100).toFixed(1)}%</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${(item.coverage_sp1 * 100).toFixed(1)}%</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${(item.coverage_sp2 * 100).toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 20px; color: #666; font-size: 13px;">
+                        <strong>Note:</strong> Rows with yellow background indicate unanchored scaffolds.
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('scaffoldMappingContent').innerHTML = html;
+        }
+        
+        function displayPloidyResults(ploidyData) {
+            if (!ploidyData) {
+                document.getElementById('ploidyContent').innerHTML = 
+                    '<p style="padding: 40px; text-align: center; color: #666;">No ploidy detection data available</p>';
+                return;
+            }
+            
+            const wgdEvents = ploidyData.wgd_events || [];
+            const tandemDuplications = ploidyData.tandem_duplications || [];
+            const hotspots = ploidyData.hotspots || [];
+            const ksDist = ploidyData.ks_distribution || {};
+            
+            let html = `
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 20px;">Ploidy Event Detection Results</h3>
+            `;
+            
+            if (ksDist) {
+                html += `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin-top: 0;">Ks Distribution Statistics</h4>
+                        <p><strong>Total Ks pairs:</strong> ${ploidyData.total_ks_pairs || 0}</p>
+                        <p><strong>Mean Ks:</strong> ${ksDist.mean || 'N/A'}</p>
+                        <p><strong>Median Ks:</strong> ${ksDist.median || 'N/A'}</p>
+                        <p><strong>Std Dev:</strong> ${ksDist.std || 'N/A'}</p>
+                    </div>
+                `;
+            }
+            
+            if (wgdEvents.length > 0) {
+                html += `
+                    <h4 style="color: #d9534f;">Whole Genome Duplication (WGD) Events</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: #f2dede;">
+                                <th style="padding: 10px; border: 1px solid #ebccd1; text-align: left;">Event Type</th>
+                                <th style="padding: 10px; border: 1px solid #ebccd1; text-align: center;">Ks Peak</th>
+                                <th style="padding: 10px; border: 1px solid #ebccd1; text-align: center;">Gene Pairs</th>
+                                <th style="padding: 10px; border: 1px solid #ebccd1; text-align: center;">Width</th>
+                                <th style="padding: 10px; border: 1px solid #ebccd1; text-align: center;">Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                wgdEvents.forEach(event => {
+                    html += `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: 500;">${event.event_type}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${event.peak_ks}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${event.gene_pairs_in_peak}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${event.width_ks}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                                <span style="color: ${event.confidence === 'high' ? '#5cb85c' : event.confidence === 'medium' ? '#f0ad4e' : '#777'};">
+                                    ${event.confidence.toUpperCase()}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                html += `
+                    <div style="background: #d9edf7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin-top: 0; color: #31708f;">Whole Genome Duplication (WGD) Events</h4>
+                        <p>No significant WGD events detected.</p>
+                    </div>
+                `;
+            }
+            
+            if (tandemDuplications.length > 0) {
+                html += `
+                    <h4 style="color: #c7254e; margin-top: 30px;">Tandem Duplication Clusters</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: #f9f2f4;">
+                                <th style="padding: 10px; border: 1px solid #e4c6d0; text-align: left;">Cluster ID</th>
+                                <th style="padding: 10px; border: 1px solid #e4c6d0; text-align: left;">Species</th>
+                                <th style="padding: 10px; border: 1px solid #e4c6d0; text-align: left;">Chromosome</th>
+                                <th style="padding: 10px; border: 1px solid #e4c6d0; text-align: center;">Gene Count</th>
+                                <th style="padding: 10px; border: 1px solid #e4c6d0; text-align: center;">Length (bp)</th>
+                                <th style="padding: 10px; border: 1px solid #e4c6d0; text-align: center;">Density</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                tandemDuplications.slice(0, 20).forEach(tandem => {
+                    html += `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">${tandem.cluster_id}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${tandem.species}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${tandem.chromosome}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${tandem.gene_count}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${tandem.length_bp.toLocaleString()}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${(tandem.density * 1000000).toFixed(2)}/Mb</td>
+                        </tr>
+                    `;
+                });
+                
+                if (tandemDuplications.length > 20) {
+                    html += `
+                        <tr>
+                            <td colspan="6" style="padding: 10px; border: 1px solid #ddd; text-align: center; font-style: italic; color: #666;">
+                                ... and ${tandemDuplications.length - 20} more clusters
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            if (hotspots.length > 0) {
+                html += `
+                    <h4 style="color: #8a6d3b; margin-top: 30px;">Duplication Hotspots</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: #fcf8e3;">
+                                <th style="padding: 10px; border: 1px solid #faebcc; text-align: left;">Hotspot ID</th>
+                                <th style="padding: 10px; border: 1px solid #faebcc; text-align: left;">Species</th>
+                                <th style="padding: 10px; border: 1px solid #faebcc; text-align: left;">Chromosome</th>
+                                <th style="padding: 10px; border: 1px solid #faebcc; text-align: center;">Peak Position</th>
+                                <th style="padding: 10px; border: 1px solid #faebcc; text-align: center;">Max Density</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                hotspots.forEach(hotspot => {
+                    const densityColor = hotspot.max_density >= 0.8 ? '#d9534f' : hotspot.max_density >= 0.6 ? '#f0ad4e' : '#5bc0de';
+                    html += `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">${hotspot.hotspot_id}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${hotspot.species}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${hotspot.chromosome}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${hotspot.peak_position.toLocaleString()}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 500; color: ${densityColor};">${(hotspot.max_density * 100).toFixed(1)}%</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            html += `
+                <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="margin-top: 0;">Visualization Legend</h4>
+                    <p>Check the Circos Plot tab for visualization of duplication hotspots annotated on the chromosomes.</p>
+                </div>
+            </div>
+            `;
+            
+            document.getElementById('ploidyContent').innerHTML = html;
+        }
+        
+        function downloadScaffoldMapping() {
+            if (!analysisResults || !analysisResults.scaffold_mapping) return;
+            
+            let csv = 'Chromosome_Group,Scaffold_Sp1,Scaffold_Sp2,Shared_Genes,Mapping_Score,Coverage_Sp1,Coverage_Sp2\n';
+            
+            analysisResults.scaffold_mapping.forEach(item => {
+                csv += `${item.chromosome_group},${item.scaffold_sp1},${item.scaffold_sp2},${item.shared_genes},${item.mapping_score.toFixed(4)},${item.coverage_sp1.toFixed(4)},${item.coverage_sp2.toFixed(4)}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'scaffold_mapping.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+        
+        function downloadPDF() {
+            if (!analysisResults) return;
+            
+            const pdfData = atob(analysisResults.pdf_report);
+            const uint8Array = new Uint8Array(pdfData.length);
+            for (let i = 0; i < pdfData.length; i++) {
+                uint8Array[i] = pdfData.charCodeAt(i);
+            }
+            
+            const blob = new Blob([uint8Array], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'synteny_analysis_report.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('active');
+        }
+    </script>
+</body>
+</html>
