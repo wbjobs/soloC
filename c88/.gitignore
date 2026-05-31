@@ -1,0 +1,10 @@
+node_modules/
+index/
+clips/
+*.onnx
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.log
+.DS_Store

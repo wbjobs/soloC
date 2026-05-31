@@ -1,0 +1,28 @@
+{
+  "name": "video-retrieval-cli",
+  "version": "1.0.0",
+  "description": "Command line tool for video content retrieval using CLIP and HNSW",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "video",
+    "retrieval",
+    "clip",
+    "hnsw",
+    "onnx"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "onnxruntime-node": "^1.16.3",
+    "hnswlib-node": "^1.4.2",
+    "sharp": "^0.33.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "fs-extra": "^11.2.0",
+    "tmp": "^0.2.1"
+  }
+}
