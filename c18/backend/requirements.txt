@@ -1,0 +1,11 @@
+flask
+flask-cors
+graphene
+graphene-file-upload
+flask-graphql
+biopython
+pandas
+requests
+numpy
+scikit-learn
+joblib
