@@ -1,0 +1,28 @@
+[package]
+name = "esp32-rust-webserver"
+version = "0.1.0"
+authors = ["ESP32 Rust Developer"]
+edition = "2021"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = false
+
+[profile.dev]
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = true
+
+[dependencies]
+esp-idf-sys = { version = "0.46.0", features = ["binstart"] }
+esp-idf-hal = "0.43.0"
+esp-idf-svc = "0.48.0"
+embedded-hal = "0.2.7"
+embedded-hal-1 = { version = "1.0.0", package = "embedded-hal" }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["arbitrary_precision"] }
+log = "0.4"
+heapless = "0.8"
