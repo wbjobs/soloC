@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太空无人机收集游戏</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="login-panel" class="panel">
+        <h1>🚀 太空无人机收集游戏</h1>
+        <div class="form-group">
+            <input type="text" id="player-name" placeholder="输入你的名字" maxlength="20">
+        </div>
+        <button id="join-btn" class="btn">加入游戏</button>
+    </div>
+
+    <div id="game-panel" class="panel hidden">
+        <div class="hud">
+            <div class="hud-left">
+                <div class="stat">
+                    <span class="label">玩家:</span>
+                    <span id="player-name-display" class="value">-</span>
+                </div>
+                <div class="stat">
+                    <span class="label">分数:</span>
+                    <span id="score" class="value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">每日时间:</span>
+                    <span id="daily-time" class="value">15:00</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="stat">
+                    <span class="label">燃料:</span>
+                    <div class="progress-bar">
+                        <div id="fuel-bar" class="progress" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <span class="label">载重:</span>
+                    <div class="progress-bar">
+                        <div id="cargo-bar" class="progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="show-heatmap" class="btn small">显示热力图</button>
+            <button id="show-players" class="btn small">显示玩家</button>
+            <button id="replay-btn" class="btn small">历史回放</button>
+            <button id="add-test-drone" class="btn small">添加测试无人机</button>
+        </div>
+
+        <div id="replay-panel" class="replay-panel hidden">
+            <h3>历史回放</h3>
+            <input type="range" id="replay-slider" min="0" max="100" value="0">
+            <div class="replay-controls">
+                <button id="play-replay" class="btn small">播放</button>
+                <button id="pause-replay" class="btn small">暂停</button>
+                <button id="close-replay" class="btn small">关闭</button>
+            </div>
+        </div>
+
+        <div class="players-list">
+            <h3>在线玩家</h3>
+            <div id="players-container"></div>
+        </div>
+
+        <div class="instructions">
+            <p>🖱️ 点击3D空间设置目标点</p>
+            <p>🔄 滚轮缩放视角</p>
+            <p>🖐️ 拖拽旋转视角</p>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(100,150,255,0.3);">
+                <p><span style="color: #00ff00;">●</span> 移动中</p>
+                <p><span style="color: #ffaa00;">●</span> 等待中</p>
+                <p><span style="color: #ff6600;">●</span> 重规划中</p>
+                <p><span style="color: #00ffff;">◯</span> 引力弹弓</p>
+                <p><span style="color: #ff0000;">═</span> 冲突警告</p>
+            </div>
+        </div>
+
+        <div class="gravity-info" id="gravity-info">
+            <h4>🌍 引力状态</h4>
+            <div id="gravity-body-name">无引力影响</div>
+            <div id="gravity-strength">引力强度: 0%</div>
+            <div id="fuel-bonus">燃料节省: 0%</div>
+        </div>
+    </div>
+
+    <div id="game-canvas"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
