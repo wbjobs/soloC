@@ -1,0 +1,24 @@
+node_id: "node-001"
+version: 1
+containers:
+  - name: edge_nginx
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - "/data/nginx/html:/usr/share/nginx/html"
+    env:
+      NGINX_HOST: localhost
+      NGINX_PORT: "80"
+    cpu_limit: 0.5
+    memory_limit: 536870912
+    restart_policy: always
+  - name: edge_app
+    image: alpine:latest
+    command: ["sleep", "infinity"]
+    cpu_limit: 1.0
+    memory_limit: 1073741824
+    restart_policy: always
+metadata:
+  location: "beijing"
+  rack: "rack-01"

@@ -1,0 +1,2 @@
+server_addr: localhost:50051
+heartbeat_interval: 30

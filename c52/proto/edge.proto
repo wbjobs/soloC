@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package edge;
+
+option go_package = "./proto;edge";
+
+message ContainerConfig {
+  string image = 1;
+  string name = 2;
+  map<string, string> env = 3;
+  repeated string ports = 4;
+  repeated string volumes = 5;
+  double cpu_limit = 6;
+  int64 memory_limit = 7;
+  string restart_policy = 8;
+}
+
+message NodeConfig {
+  string node_id = 1;
+  int64 version = 2;
+  repeated ContainerConfig containers = 3;
+  map<string, string> metadata = 4;
+}
+
+message ResourceUsage {
+  double cpu_usage = 1;
+  int64 memory_usage = 2;
+  int64 memory_total = 3;
+  int64 disk_usage = 4;
+  int64 disk_total = 5;
+  double load_average = 6;
+}
+
+message ContainerStatus {
+  string name = 1;
+  string image = 2;
+  string status = 3;
+  string state = 4;
+  int32 restart_count = 5;
+  int64 created_at = 6;
+  string error = 7;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  string node_ip = 2;
+  string hostname = 3;
+  ResourceUsage resource_usage = 4;
+  repeated ContainerStatus containers = 5;
+  int64 timestamp = 6;
+  string status = 7;
+}
+
+message HeartbeatResponse {
+  bool accepted = 1;
+  string message = 2;
+  int64 next_heartbeat = 3;
+  bool config_updated = 4;
+}
+
+message ConfigRequest {
+  string node_id = 1;
+  int64 current_version = 2;
+  string node_ip = 3;
+  string hostname = 4;
+}
+
+message ConfigResponse {
+  bool has_update = 1;
+  NodeConfig config = 2;
+  string message = 3;
+  bool force_sync = 4;
+}
+
+message ConfigAckRequest {
+  string node_id = 1;
+  int64 version = 2;
+  bool success = 3;
+  string error_message = 4;
+  int64 timestamp = 5;
+}
+
+message ConfigAckResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+service EdgeService {
+  rpc GetConfig(ConfigRequest) returns (ConfigResponse);
+  rpc ReportHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportConfigAck(ConfigAckRequest) returns (ConfigAckResponse);
+}

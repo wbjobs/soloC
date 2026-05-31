@@ -1,0 +1,10 @@
+grpc_port: 50051
+http_port: 8080
+heartbeat_interval: 30
+
+db_host: localhost
+db_port: 5432
+db_user: postgres
+db_password: postgres
+db_name: edge_server
+db_sslmode: disable
