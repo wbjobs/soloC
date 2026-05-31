@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/MainWindow.qml</file>
+        <file>qml/TimelineView.qml</file>
+        <file>qml/PreviewWindow.qml</file>
+        <file>qml/MediaLibraryPanel.qml</file>
+        <file>qml/PlayerControls.qml</file>
+        <file>qml/TrackItem.qml</file>
+        <file>qml/ClipItem.qml</file>
+    </qresource>
+</RCC>
