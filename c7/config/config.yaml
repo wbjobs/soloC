@@ -1,0 +1,13 @@
+services:
+  price:
+    port: 50051
+  inventory:
+    grpc_port: 50052
+    http_port: 8080
+  graphql:
+    port: 4000
+
+redis:
+  addresses:
+    - localhost:6379
+  replicas: 150

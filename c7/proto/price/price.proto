@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package price;
+
+import "proto/common/common.proto";
+
+option go_package = "e-commerce-inventory-price/proto/price";
+
+service PriceService {
+  rpc GetPrice(common.Product) returns (PriceResponse);
+  rpc GetPriceInCurrency(GetPriceInCurrencyRequest) returns (PriceResponse);
+}
+
+message PriceResponse {
+  double base_price = 1;
+  string base_currency = 2;
+  map<string, double> converted_prices = 3;
+}
+
+message GetPriceInCurrencyRequest {
+  string product_id = 1;
+  repeated string target_currencies = 2;
+}
