@@ -1,0 +1,14 @@
+[package]
+name = "sph_pollution_game"
+version = "0.1.0"
+edition = "2021"
+description = "基于SPH的污染物扩散战术游戏原型"
+
+[dependencies]
+eframe = { version = "0.27", features = ["glow"] }
+egui = "0.27"
+rayon = "1.10"
+rand = "0.8"
+glam = "0.25"
+image = { version = "0.25", default-features = false, features = ["png"] }
+directories = "5.0"
